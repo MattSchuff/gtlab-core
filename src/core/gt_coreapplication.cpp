@@ -289,6 +289,27 @@ GtCoreApplication::initSession(const QString& id)
     }
 }
 
+void GtCoreApplication::initProject(const QString &id)
+{
+    qDebug() << "User Defined project:" << id;
+    qDebug() << "Known projects";
+    foreach(auto _p, m_session->projects())
+    {
+        qDebug() << "- "<<_p->objectName();
+    }
+    GtProject* projObj = m_session->findProject(id);
+    qDebug() << "Found project:" << projObj;
+    if(projObj)
+    {
+        qDebug() << "setting project...";
+        m_session->setCurrentProject(projObj);
+        qDebug() << "...done setting project";
+        gtApp->settings()->setLastProject(id);
+    }
+
+    switchCurrentProject();
+}
+
 void
 GtCoreApplication::initLogging()
 {

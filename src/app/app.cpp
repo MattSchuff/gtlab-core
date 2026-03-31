@@ -93,6 +93,42 @@ main(int argc, char* argv[])
 
     GtApplication app(qApp);
 
+
+
+
+
+    qDebug() << "ARGUMENTS OF CALL:"             << qApp->arguments();
+
+
+    QString userDefinedSessionId = "";
+    QString userDefinedProject = "";
+    int nArgs = qApp->arguments().count();
+    for(int i=1; i<nArgs; i++)
+    {
+        QString _arg = qApp->arguments()[i];
+        qDebug() << "arg: " << _arg;
+
+        QString _flag;
+
+
+        _flag = "--session=";
+        if (_arg.startsWith(_flag))
+        {
+            userDefinedSessionId = _arg.mid(_flag.length());
+        }
+
+        _flag = "--project=";
+        if (_arg.startsWith(_flag))
+        {
+            userDefinedProject = _arg.mid(_flag.length());
+        }
+    }
+
+
+    qDebug() << "UserDefinedSession:" << userDefinedSessionId;
+    qDebug() << "userDefinedProject:" << userDefinedProject;
+
+
     splash.process(QObject::tr("initializing..."), [&app](){
         app.init();
     });
@@ -200,10 +236,30 @@ main(int argc, char* argv[])
 
 
     // session initialization
-    splash.process(QObject::tr("loading session..."), [&app](){
-        app.initSession();
+    splash.process(QObject::tr("loading session..."), [&app, &userDefinedSessionId](){
+
+        if (userDefinedSessionId.isEmpty())
+        {
+            app.initSession();
+        }
+        else
+        {
+            qDebug() << "init user defined session";
+            app.initSession(userDefinedSessionId);
+        }
     }, delay);
 
+    if (!userDefinedProject.isEmpty())
+    {
+
+        qDebug() << "init user defined project";
+        // project  initialization
+        splash.process(QObject::tr("loading project..."), [&app, &userDefinedProject](){
+            {
+                app.initProject(userDefinedProject);
+            }
+        }, delay);
+    }
 
     // perspective initialization
     splash.process(QObject::tr("loading perspectives..."), [&app](){
