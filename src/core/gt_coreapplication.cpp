@@ -20,6 +20,7 @@
 #include <QSettings>
 #include <QtGlobal>
 #include <QDebug>
+#include <QThread>
 
 #include "gt_coreapplication.h"
 #include "gt_externalizationmanager.h"
@@ -308,6 +309,8 @@ void GtCoreApplication::initProject(const QString &id)
     }
 
     switchCurrentProject();
+    qDebug() << "This thread:" << QThread::currentThread() ;
+    qDebug() << "This thread id:" << QThread::currentThreadId() ;
 }
 
 void

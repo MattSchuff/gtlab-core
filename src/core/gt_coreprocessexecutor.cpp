@@ -24,6 +24,8 @@
 
 #include "gt_coreprocessexecutor.h"
 
+#include "gt_objectfactory.h"
+
 const std::string GtCoreProcessExecutor::S_ID = "CoreProcessExecutor";
 
 struct GtCoreProcessExecutor::Impl
@@ -466,6 +468,52 @@ GtCoreProcessExecutor::setupTaskRunner()
     return runner;
 }
 
+
+
+inline QString stringrepeat(const QString& input, size_t num)
+{
+    std::ostringstream os;
+    std::fill_n(std::ostream_iterator<std::string>(os), num, input.toStdString());
+    return QString::fromStdString(os.str());
+}
+
+inline void _printObjectWithChildren(GtObject* x, int lvl)
+{
+    QString intend = stringrepeat("  ", lvl);
+    qDebug() << intend << x << "->" << x->objectPath();
+    qDebug() << intend << "  c:";
+    foreach(auto c, x->findDirectChildren())
+    {
+        _printObjectWithChildren(c, lvl+1);
+    }
+
+}
+
+inline void _printLinkedObjects(QList<QPointer<GtObject>>* linkedObjects)
+{
+    for(int i=0; i<linkedObjects->size(); i++)
+    {
+        auto x = linkedObjects->at(i);
+        qDebug() << "parent:"  << x->parentObject();
+        _printObjectWithChildren(x,0);
+    }
+
+}
+
+/*
+inline void _printObj(GtObject &newObj, int lvl)
+{
+    QString intend = "";
+    for(int i=0;i<lvl;i++) intend += "  ";
+    qDebug() << "OK:" << intend + newObj.objectPath() << &newObj;
+    foreach(auto c, newObj.findDirectChildren())
+    {
+        _printObj(*c, lvl+1);
+    }
+}
+*/
+
+
 void
 GtCoreProcessExecutor::onTaskRunnerFinished()
 {
@@ -501,6 +549,22 @@ GtCoreProcessExecutor::onTaskRunnerFinished()
 
     QList<GtObjectMemento> changedData = taskRunner->dataToMerge();
 
+
+    /*gtFatal() << "changedData:";
+    int i=0;
+    foreach(auto d, changedData)
+    {
+        gtFatal() << i<<":" << d.toByteArray();
+
+        GtObjectFactory* factory = GtObjectFactory::instance();
+        auto newObj = d.toObject(*factory);
+
+        //auto newObj = d.toObject(*gtObjectFactory);
+
+        gtFatal() << i<<":" << newObj;
+        i++;
+    }*/
+
     if (pimpl->save)
     {
         gtInfoId(GT_EXEC_ID).medium()
@@ -511,7 +575,51 @@ GtCoreProcessExecutor::onTaskRunnerFinished()
         if (finishedTask->currentState() == GtProcessComponent::FINISHED ||
             finishedTask->currentState() == GtProcessComponent::WARN_FINISHED)
         {
+            /*qDebug() << finishedTask->objectPath()+" successful, checking memento";
+            foreach(auto d, changedData)
+            {
+                GtObjectFactory* factory = GtObjectFactory::instance();
+                auto newObj = d.toObject(*factory);
+
+                    qDebug() << "OK:" << d.toByteArray();
+                    //_printObj(*newObj, 0);
+                    _printObjectWithChildren(newObj.get(), 0);
+
+            }*/
+
             handleTaskFinishedHelper(changedData, finishedTask);
+        }
+        else //if (finishedTask->currentState() == GtProcessComponent::FAILED)
+        {
+            if (finishedTask->applyMementoEvenWhenCalculatorFails())
+            {
+                handleTaskFinishedHelper(changedData, finishedTask);
+                /*
+                QList<GtObjectMemento> changedData2;
+
+                qDebug() << finishedTask->objectPath()+" has not finished, checking memento";
+                foreach(auto d, changedData)
+                {
+
+                    GtObjectFactory* factory = GtObjectFactory::instance();
+                    auto newObj = d.toObject(*factory);
+
+                    if (d.className()=="gt::processstorage::data::Package")
+                    {
+                        qDebug() << "OK:" << d.toByteArray();
+                        _printObjectWithChildren(newObj.get(), 0);
+
+                        changedData2.append(d);
+                    }
+                    else
+                    {
+                        qDebug() << "IGNORE:" << d.toByteArray();
+                        _printObjectWithChildren(newObj.get(), 0);
+                    }
+                }
+
+                handleTaskFinishedHelper(changedData2, finishedTask);*/
+            }
         }
     }
 

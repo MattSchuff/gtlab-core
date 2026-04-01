@@ -22,6 +22,11 @@
 
 #include <algorithm>
 
+#include "gt_objectmemento.h"
+#include "gt_objectmementodiff.h"
+
+#include "gt_objectfactory.h"
+
 struct GtTask::Impl
 {
     /// Event loop
@@ -42,6 +47,8 @@ struct GtTask::Impl
         gt::process_runner::S_ACCESS_ID,
         tr("Process Runner to run task with. Only relevant for the root task")
     };
+
+    GtBoolProperty applyMementoEvenWhenCalculatorFails{"applyMementoEvenWhenCalculatorFails", "Apply memento on fail", "", false};
 };
 
 GtTask::GtTask() :
@@ -66,6 +73,7 @@ GtTask::GtTask() :
     qRegisterMetaType<GtMonitoringDataSet>("GtMonitoringDataSet");
 
     registerProperty(pimpl->processRunner, tr("Execution"));
+    registerProperty(pimpl->applyMementoEvenWhenCalculatorFails, "Execution");
 
     pimpl->processRunner.hide(!gtApp || !gtApp->devMode());
 }
@@ -352,6 +360,182 @@ GtTask::enableCurrentIterationMonitoring()
     registerMonitoringProperty(m_currentIter);
 }
 
+
+
+
+
+inline QString stringrepeat(const QString& input, size_t num)
+{
+    std::ostringstream os;
+    std::fill_n(std::ostream_iterator<std::string>(os), num, input.toStdString());
+    return QString::fromStdString(os.str());
+}
+
+inline void _printObjectWithChildren(GtObject* x, int lvl=0)
+{
+    QString intend = stringrepeat("  ", lvl);
+    qDebug().noquote() << intend << x << "->" << x->objectPath();
+    //qDebug() << intend << "   p:"  << x->parentObject();
+    qDebug().noquote() << intend << "   c:";
+    foreach(auto c, x->findDirectChildren())
+    {
+        _printObjectWithChildren(c, lvl+1);
+    }
+}
+
+inline void _printLinkedObjects2(QList<GtObject*>& linkedObjects)
+{
+    for(int i=0; i<linkedObjects.size(); i++)
+    {
+        auto x = linkedObjects.at(i);
+        qDebug().noquote() << "parent:"  << x->parentObject();
+        _printObjectWithChildren(x);
+    }
+}
+
+
+QMap<QString, GtObjectMementoDiff> _diffOldNew(QMap<QString, GtObjectMemento>& oldState, QMap<QString, GtObjectMemento>& newState)
+{
+    QMap<QString, GtObjectMementoDiff> difflist;
+
+    //qDebug() << "----------------------------------------------mememto before:";
+    foreach(auto m, oldState)
+    {
+        //qDebug().noquote() << QString::fromUtf8(m.toByteArray());
+    }
+
+    //qDebug() << "----------------------------------------------mememto after:";
+    foreach(auto m, newState)
+    {
+        //qDebug().noquote() << QString::fromUtf8(m.toByteArray());
+    }
+
+    QList<GtObjectMemento> addCandidates;
+    QList<GtObjectMemento> deleteCandidates;
+    QStringList keysBefore = oldState.keys();
+    QStringList keysAfter = newState.keys();
+    QStringList keys;
+    foreach(auto _obj, keysBefore)
+    {
+        if (keysAfter.contains(_obj))
+        {
+            keys.append(_obj);
+        }
+    }
+
+    foreach(auto _uuid, keysBefore)
+    {
+        if(!keysAfter.contains(_uuid)) {
+            addCandidates.append(oldState[_uuid]);
+        }
+    }
+    foreach(auto _uuid, keysAfter)
+    {
+        if(!keysBefore.contains(_uuid)) {
+            deleteCandidates.append(newState[_uuid]);
+        }
+    }
+
+    if (addCandidates.size()>0) {
+
+        qDebug().noquote() << "These objects are missing after calculator:";
+        foreach(auto _obj, addCandidates)
+        {
+            qDebug().noquote() << "    - " << _obj.uuid() << _obj.ident();
+            qDebug().noquote() << QString::fromUtf8(_obj.toByteArray());
+        }
+        gtFatal() << "root objects are missing after process component, that shouldn't happen";
+        //return {};
+    }
+
+    if (deleteCandidates.size()>0) {
+        qDebug() << "These objects are added after calculator:";
+        foreach(auto _obj, deleteCandidates)
+        {
+            qDebug().noquote() << "    - " << _obj.uuid() << _obj.ident();
+            qDebug().noquote() << QString::fromUtf8(_obj.toByteArray());
+        }
+        gtFatal() << "root objects are added after process component, that shouldn't happen";
+        //return {};
+    }
+
+    //qDebug() << "Diffing the rest:";
+    foreach(auto _obj, keys)
+    {
+        qDebug().noquote() << "key: " << _obj;
+
+        GtObjectMemento old = oldState[_obj];
+        GtObjectMementoDiff diff(old, newState[_obj]);
+
+        difflist[_obj] = diff;
+
+        qDebug().noquote() << QString::fromUtf8(diff.toByteArray());
+    }
+
+
+
+    return difflist;
+}
+
+
+bool _resetObjectsToBefore2(QList<GtObject*>& linkedObjects, QMap<QString, GtObjectMemento>& before, QMap<QString, GtObjectMemento>& after )
+{
+
+    //auto obj = m.toObject(*(GtObjectFactory::instance()));
+    //QPointer<GtObject> obj2{obj.release()};
+    //linkedObjects->append(obj2);
+
+    //qDebug().noquote() << "----------------------------------------------RESET, BEFORE:" << linkedObjects.size();
+    //_printLinkedObjects2(linkedObjects);
+
+
+    qDebug().noquote() << "----------------------------------------------diff to revert:";
+    auto diff = _diffOldNew(after, before);
+
+    qDebug() << "diffs:";
+    foreach(auto key, diff.keys())
+    {
+        qDebug() << key << ":" << QString::fromUtf8(diff[key].toByteArray());
+    }
+
+
+    qDebug().noquote() << "----------------------------------------------resetting:";
+    bool okAll = true;
+    foreach(auto m, linkedObjects)
+    {
+        GtObject* obj = m;
+
+        qDebug() << "reset:" << obj->objectPath();
+        bool ok = obj->applyDiff(diff[obj->uuid()]);
+
+        if(!ok)
+        {
+            qDebug() << "could not apply diff";
+            okAll = false;
+        }
+
+
+        //if (!m_source->applyDiff(*helper->sumDiff()))
+        //{
+        //    gtErrorId(GT_EXEC_ID)
+        //    << tr("Data changes from the task '%1' could not be "
+        //          "merged back into datamodel!")
+        //            .arg(m_task->objectName());
+        //    m_task->setState(GtProcessComponent::FAILED);
+        //}
+
+
+    }
+
+
+    //qDebug().noquote() << "----------------------------------------------RESET, RESTORED:" << linkedObjects.size();
+    //_printLinkedObjects2(linkedObjects);
+
+
+
+    return okAll;
+}
+
 bool
 GtTask::runChildElements()
 {
@@ -374,38 +558,83 @@ GtTask::runChildElements()
 
     qDebug() << "running calculators...";
 
+    auto linkedObjs = this->runnable()->linkedObjects();
+
     // run calculators
     foreach (GtProcessComponent* comp, childs)
     {
-        if (!comp->exec())
+        //qDebug().noquote() << "_printLinkedObjects2(linkedObjs) BEFORE CHILD "+comp->objectName();
+        //_printLinkedObjects2(linkedObjs);
+        //qDebug().noquote() << "<<<<<<<<-------------------------------->>>>>>>>>>";
+
+        QMap<QString,GtObjectMemento> mementoBefore2;
+        foreach(auto _obj, linkedObjs)
+        {
+            mementoBefore2[_obj->uuid()] = _obj->toMemento();
+        }
+
+
+        bool success = comp->exec();
+
+
+        QMap<QString,GtObjectMemento> mementoAfter2;
+        foreach(auto _obj, linkedObjs)
+        {
+            mementoAfter2[_obj->uuid()] = _obj->toMemento();
+        }
+
+
+        bool ok = true;
+
+        if (!success)
         {
             // calculator run failed
             setState(GtProcessComponent::FAILED);
 
             qDebug() << "   |-> run failed!";
 
-            return false;
+            ok=false;
         }
-
-        if (isInterruptionRequested())
+        else if (isInterruptionRequested())
         {
             gtWarning() << "task terminated!";
             setState(GtProcessComponent::TERMINATED);
-            return false;
+
+            ok = false;
         }
-
-        GtCalculator* calc = qobject_cast<GtCalculator*>(comp);
-
-        if (calc && calc->runFailsOnWarning())
+        else
         {
-            if (calc->currentState() == GtProcessComponent::WARN_FINISHED)
+            GtCalculator* calc = qobject_cast<GtCalculator*>(comp);
+
+            if (calc && calc->runFailsOnWarning())
             {
-                calc->setState(FAILED);
-                setState(GtProcessComponent::FAILED);
-                return false;
+                if (calc->currentState() == GtProcessComponent::WARN_FINISHED)
+                {
+                    calc->setState(FAILED);
+                    setState(GtProcessComponent::FAILED);
+                    ok = false;
+                }
             }
         }
+
+        if(!ok)
+        {
+            qDebug() << "Calculator failed, resetting data tree to before calculator";
+
+            if(!_resetObjectsToBefore2(linkedObjs, mementoBefore2, mementoAfter2))
+            {
+                qDebug().noquote() << "Could not reset memento";
+            }
+
+            return false;
+        }
+        else
+        {
+            _diffOldNew(mementoBefore2, mementoAfter2);
+        }
+
     }
+
 
     qDebug() << "evaluating...";
     // evaluate current iteration step
@@ -435,6 +664,12 @@ GtTask::collectMonitoringData()
     collectMonitoringDataHelper(retval, this);
 
     return retval;
+}
+
+bool
+GtTask::applyMementoEvenWhenCalculatorFails()
+{
+    return this->pimpl->applyMementoEvenWhenCalculatorFails.getVal();
 }
 
 QList<GtPropertyConnection*>

@@ -151,6 +151,9 @@ public:
      */
     bool isInterruptionRequested() const;
 
+
+    bool applyMementoEvenWhenCalculatorFails();
+
 public slots:
     /**
      * @brief Called when monitoring data is available.
@@ -200,6 +203,8 @@ protected:
      * @return Monitoring data map.
      */
     GtMonitoringDataSet collectMonitoringData();
+
+
 
 private:
     struct Impl;
