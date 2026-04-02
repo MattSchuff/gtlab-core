@@ -239,7 +239,7 @@ GtSession::setCurrentProject(const QString& id)
 
 bool
 GtSession::setCurrentProject(GtProject* project)
-{
+{   
     if (!project)
     {
         m_currentProject = nullptr;
@@ -262,14 +262,17 @@ void
 GtSession::switchCurrentProject()
 {
     QList<GtProject*> projTmp = projects();
+    qDebug() << "GtSession::switchCurrentProject()" << projTmp;
 
     if (projTmp.contains(m_currentProject))
     {
         projTmp.removeOne(m_currentProject);
     }
 
+    qDebug() << "GtSession::switchCurrentProject()2" << projTmp;
     foreach (GtProject* project, projTmp)
     {
+        qDebug() << "project:" << project << project->isOpen();
         if (project->isOpen())
         { // cppcheck-suppress useStlAlgorithm
             setCurrentProject(project);

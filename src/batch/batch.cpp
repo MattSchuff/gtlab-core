@@ -18,7 +18,11 @@
 #include <QDir>
 #include <QDebug>
 #include <QSettings>
+#include <QStringLiteral>
+#include <gt_objectfactory.h>
 
+#include "gt_doubleproperty.h"
+#include "gt_jobcard.h"
 #include "internal/gt_commandlinefunctionhandler.h"
 #include "batchremote.h"
 #include "gt_consolerunprocess.h"
@@ -37,6 +41,9 @@
 #include "gt_hostinfo.h"
 #include "gt_remoteprocessrunner.h"
 #include "settings/gt_settings.h"
+
+
+#include "gt_processdata.h"
 
 int displayList(const QStringList&);
 
@@ -710,6 +717,250 @@ switch_session(const QStringList& args)
     return 0;
 }
 
+int
+run_jobcard(const QStringList& args)
+{
+    if (args.size() != 1)
+    {
+        // print usage message
+        std::cout << QObject::tr("jobcard: Invalid arguments\n\n")
+                         .toStdString();
+
+        auto func = GtCommandLineFunctionHandler::instance().getFunction(
+            "jobcard");
+
+        assert(func);
+
+        func.showDefaultHelp();
+
+        return 1;
+    }
+
+    qDebug() << "args:" << args;
+
+    QString jobcardID = args[0];
+
+    qDebug() << "jobcard_id" << jobcardID;
+
+
+    //bool ok = gtApp->initJobCard(jobcardID);
+
+    bool ok=true;
+
+
+    QString xmlString = QString("<object name=\"xx\" class=\"GtJobCard\" uuid=\"{X26a1c6f-cbe2-48e0-9b4e-39e3832da7b1}\"> "
+                          "          <property type=\"QString\" name=\"jobid\">{Y26a1c6f-cbe2-48e0-9b4e-39e3832da7b1}</property> "
+                                "          <property type=\"QString\" name=\"sessionId\">sandbox-core</property> "
+                                "          <property type=\"QString\" name=\"projectName\">SandboxCore</property> "
+                                "          <property type=\"QString\" name=\"taskName\">task1</property> "
+                          "       <property-container name=\"inputData\"> "
+
+                          "       <property type=\"String\" name=\"{f60652cc-524f-4e64-a242-9c76508eddf2}\"> "
+                           "      <property type=\"QString\" name=\"target-obj-uuid\">target-abc-uuid</property> "
+                            "     <property type=\"QString\" name=\"target-obj-path\">MyPkgXyz</property>"
+                             "    <property type=\"QString\" name=\"property-id\">input1</property>"
+                               "  <property type=\"QString\" name=\"value\">myvalue</property>"
+                         "        </property>"
+                          "       <property type=\"Double\" name=\"{32d61660-bdf0-44b2-876d-f86b9338ea8e}\">"
+                           "                      <property type=\"QString\" name=\"target-obj-uuid\">target-abc2-uuid</property>"
+                            "       <property type=\"QString\" name=\"target-obj-path\">MyPkgXyz2</property>"
+                             "      <property type=\"QString\" name=\"property-id\">input2</property>"
+                              "     <property type=\"double\" name=\"value\">2.1</property>"
+                               "    </property>"
+                                 "   <property type=\"Object UUID\" name=\"{a2d61660-bdf0-44b2-876d-f86b9338ea8e}\">"
+                                  "                      <property type=\"QString\" name=\"target-obj-uuid\">target-abc3-uuid</property>"
+                                  "       <property type=\"QString\" name=\"target-obj-path\">MyPkgXyz3</property>"
+                                  "      <property type=\"QString\" name=\"property-id\">input3</property>"
+                                  "     <property type=\"QString\" name=\"value\">{target-uuid-objlink}</property>"
+                                  "    </property>"
+                              "   </property-container>"
+                               "  <property-container name=\"outputData\"/>"
+                                "                             </object>");
+
+        //"<object class=\"GtJobCard\" name=\"my card\" uuid=\"{08c62276-be1b-42f3-bfba-ac57c2cfd6d1}\">           <property name=\"jobid\" type=\"QString\">{08c62276-be1b-42f3-bfba-ac57c2cfd6d1}</property>                    <property-container name=\"inputData\">                    <property name=\"{2150e9ad-c3a6-4528-abde-28777c52aa64}\" type=\"Object UUID\">                    <property name=\"Name\" type=\"QString\">Storage</property>                    <property name=\"Value\" type=\"QString\">35cd775d-b822-4fad-970e-5dff8e2ccb59</property>                    </property>                    </property-container>                    <property-container name=\"outputData\"/>                    </object>"};
+
+    QDomDocument doc;
+    QString errorMsg;
+    int errorLine, errorColumn;
+    if (!doc.setContent(xmlString, &errorMsg, &errorLine, &errorColumn)) {
+        qDebug() << "Parse error:" << errorMsg
+                 << "at line" << errorLine
+                 << "column" << errorColumn;
+        return 1;
+    }
+
+    // Get the root element
+    QDomElement rootElement = doc.documentElement();
+    GtObjectMemento memento{rootElement};
+    qDebug().noquote() << QString::fromUtf8(memento.toByteArray());
+
+
+
+
+
+    auto jc = new GtJobCard;
+    jc->setFactory(GtObjectFactory::instance());
+    jc->fromMemento(memento);
+
+
+    qDebug().noquote() << jc << jc->getJobId();
+
+    qDebug().noquote() << jc->debugInfo();
+
+
+
+    if (ok)
+    {
+        std::cout << QObject::tr("Starting Job Card '%1'\n")
+        .arg(jobcardID)
+            .toStdString();
+    }
+    else
+    {
+        std::cout << QObject::tr("Job Card '%1' doesn't exist\n")
+        .arg(jobcardID)
+            .toStdString();
+    }
+
+
+    GtProject* proj = gtApp->currentProject();
+    if(proj)
+    {
+        qDebug() << "closing current project";
+        gtDataModel->closeProject(proj);
+
+    }
+
+    qDebug() << "open project...";
+    gtDataModel->openProject("SandboxCore");
+
+    proj = gtApp->currentProject();
+    qDebug() << "proj:" << proj;
+
+
+
+
+    qDebug() << "taskids:" << proj->taskIds();
+
+    GtProcessData* processData = proj->processData();
+    qDebug() << "processData:" << processData;
+
+
+    //QList< tasks{"task1", "task2", "task3",}
+
+    //gt::console::getTask(proj, taskName);
+
+
+
+
+    qDebug().noquote() << gt::console::getTask(proj, "task1");
+    qDebug().noquote() << gt::console::getTask(proj, "task2");
+    qDebug().noquote() << gt::console::getTask(proj, "task3");
+    qDebug().noquote() << gt::console::getTask(proj, "task3");
+    qDebug().noquote() << gt::console::getTask(proj, "task4");
+    qDebug().noquote() << gt::console::getTask(proj, "task4", "dev1");
+
+
+
+
+    GtTask* t;
+/*
+      t  = gt::console::getTask(proj, "task1", "schu_m27");
+    qDebug() << "task1 children:" << t->findDirectChildren<GtProcessComponent*>();
+
+      t = gt::console::getTask(proj, "task3", "schu_m27");
+      qDebug() << "task3 children:" << t->findDirectChildren<GtProcessComponent*>();
+
+    t = gt::console::getTask(proj, "task4", "dev1");
+    qDebug() << "task4 dev1 children:" << t->findDirectChildren<GtProcessComponent*>();
+
+
+    gt::currentProcessExecutor().runTask(t);
+    qDebug() << "task4 dev1 children:" << t->findDirectChildren<GtProcessComponent*>();
+    */
+
+ t = gt::console::getTask(proj, "task3", "schu_m27");
+    auto f = t->findDirectChild<GtProcessComponent*>("f");
+    auto s = t->findDirectChild<GtProcessComponent*>("s");
+
+    qDebug() << "f:" << f;
+    qDebug() << "s:" << s;
+
+    auto fv = f->findProperty("value");
+    auto sv = s->findProperty("value");
+
+    QVariant valstr = jc->getValueX();
+    QVariant valdbl = jc->getValueY();
+
+    //qDebug() << "valstr:" << valstr.type() << valstr.typeName();
+    //qDebug() << "valdbl:" << valdbl.type() << valdbl.typeName();
+
+
+
+    auto fv1 = qobject_cast<GtDoubleProperty*>(fv);
+        fv1->setVal(1.2);
+
+    auto sv1 = qobject_cast<GtStringProperty*>(sv);
+    sv1->setVal("foobar");
+
+
+
+    gt::currentProcessExecutor().runTask(t);
+
+    /*
+    if (valdbl.type() == QVariant::Double)
+    {
+        qDebug() << "double";
+
+        if( qobject_cast<GtDoubleProperty*>(fv))
+        {
+            qDebug() << "fv is double";
+
+        }
+
+        if( qobject_cast<GtDoubleProperty*>(sv))
+        {
+            qDebug() << "sv is double";
+
+        }
+
+
+    }*/
+
+
+    /*qDebug() << proj->findProcess("task1");
+    qDebug() << proj->findProcess("task2");
+    qDebug() << proj->findProcess("task3");
+*/
+
+
+
+    //gt::console::run({"SandboxCore", "task1"});
+
+
+
+
+
+
+    return 0;
+}
+/*
+if (parser.option("jobcard"))
+{
+    QString jobcardValue = parser.optionValue("jobcard").toString();
+    std::cout << "Select jobcard: " << jobcardValue.toStdString()
+              << std::endl;
+    app.initJobCard(jobcardValue);
+}
+else
+{
+    //
+}*/
+
+
+
+
+
 void
 initPosArgument(QString const& id,
                 std::function<int(const QStringList&)> func,
@@ -786,6 +1037,11 @@ initSystemOptions()
                     "Upgrades All Modules in the current project", {},
                     QList<GtCommandLineArgument>(),
                     false);
+
+
+    initPosArgument("jobcard", run_jobcard,
+                    "Run a JobCard", {},
+                    {GtCommandLineArgument{"jobcard_id", "Jobcard ID"}});
 }
 
 int
@@ -852,6 +1108,13 @@ int main(int argc, char* argv[])
                      "Defines a session to be used for "
                      "execution."
                      "\n\t\t\tUsage: --session <session_id>");
+    parser.addOption("project",
+                     {"project", "pr"},
+                     "Defines a project to be user for "
+                     "execution"
+                     "\n\t\t\tUsage: --project <project_id>");
+
+
     parser.addOption("version",
                      {"version", "v"},
                      "\tDisplays the version number of GTlab");
@@ -918,6 +1181,21 @@ int main(int argc, char* argv[])
     {
         app.initSession();
     }
+
+    if (parser.option("project"))
+    {
+        QString projectValue = parser.optionValue("project").toString();
+        std::cout << "Select project: " << projectValue.toStdString()
+                  << std::endl;
+        app.initProject(projectValue);
+    }
+    else
+    {
+        //
+    }
+
+
+
 
     if (!app.session())
     {

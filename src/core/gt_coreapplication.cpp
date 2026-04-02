@@ -24,6 +24,7 @@
 
 #include "gt_coreapplication.h"
 #include "gt_externalizationmanager.h"
+#include "gt_jobcard.h"
 #include "gt_objectfactory.h"
 #include "gt_processfactory.h"
 #include "gt_session.h"
@@ -87,6 +88,8 @@ GtCoreApplication::GtCoreApplication(QCoreApplication* parent, AppMode batch) :
     // register data classes of core lib here
     gtObjectFactory->registerClass(GT_METADATA(GtProcessData));
     gtObjectFactory->registerClass(GT_METADATA(GtTaskGroup));
+
+    gtObjectFactory->registerClass(GT_METADATA(GtJobCard));
 }
 
 GtCoreApplication::~GtCoreApplication()
@@ -292,6 +295,8 @@ GtCoreApplication::initSession(const QString& id)
 
 void GtCoreApplication::initProject(const QString &id)
 {
+    qDebug() << "GtCoreApplication::initProject";
+    qDebug() << "curr proj:" << gtApp->currentProject();
     qDebug() << "User Defined project:" << id;
     qDebug() << "Known projects";
     foreach(auto _p, m_session->projects())
@@ -302,15 +307,55 @@ void GtCoreApplication::initProject(const QString &id)
     qDebug() << "Found project:" << projObj;
     if(projObj)
     {
+
         qDebug() << "setting project...";
-        m_session->setCurrentProject(projObj);
+       // m_session->setCurrentProject(projObj);
+        gtDataModel->openProject(projObj);
+        //m_session->loadProjectData(projObj);
         qDebug() << "...done setting project";
-        gtApp->settings()->setLastProject(id);
+       // qDebug() << "is Open:" << projObj->isOpen();
+         //GtCoreDatamodel::openProject(projObj);
+       // gtApp->settings()->setLastProject(id);
+      //  qDebug() << "is Open:" << projObj->isOpen();
+
     }
 
-    switchCurrentProject();
+    //switchCurrentProject();
+    qDebug() << "curr proj:" << gtApp->currentProject();
     qDebug() << "This thread:" << QThread::currentThread() ;
     qDebug() << "This thread id:" << QThread::currentThreadId() ;
+}
+
+bool GtCoreApplication::initJobCard(const QString &jobcardid)
+{
+    auto jobs = gtJobcards->all();
+
+    //TODO: find jobcard info
+
+    GtJobCard* jc = gtJobcards->activeJobcard();
+
+    jc = new GtJobCard();
+    jc->setObjectName("my card");
+    //jc->setI
+
+    // TODO:not found handling
+
+    qDebug() << "Running in Jobcard mode! Jobcard: " << jc->objectName() << "("+jc->uuid()+")";
+
+
+    return true;
+}
+
+bool GtCoreApplication::inJobcardMode() const
+{
+    return gtJobcards->activeJobcard() != nullptr;
+}
+
+const QString GtCoreApplication::getJobcardId() const
+{
+    auto jc = gtJobcards->activeJobcard();
+    if(!jc) return {};
+    return jc->getJobId();
 }
 
 void
@@ -687,8 +732,28 @@ GtCoreApplication::version()
 QDir
 GtCoreApplication::applicationTempDir()
 {
-    QDir retval(QCoreApplication::applicationDirPath() + QDir::separator()
-                + QStringLiteral("temp"));
+    QDir retval;
+    if(gtApp->inJobcardMode())
+    {
+        qDebug() << "GtCoreApplication::applicationTempDir() -> jobcardmode";
+
+        GtProject* proj = gtApp->currentProject();
+        QDir projdir{proj->path()};
+        QDir tempdir {projdir.absoluteFilePath("temp" + QString(QDir::separator()) + "job")};
+        QDir jobtempdir {tempdir.absoluteFilePath(gtApp->getJobcardId())};
+
+        if (!jobtempdir.exists())
+        {
+            jobtempdir.mkpath(".");
+        }
+
+        retval = QDir{jobtempdir};
+    }
+    else
+    {
+        retval = QDir{QCoreApplication::applicationDirPath() + QDir::separator()
+                + QStringLiteral("temp")};
+    }
 
     if (!retval.exists())
     {

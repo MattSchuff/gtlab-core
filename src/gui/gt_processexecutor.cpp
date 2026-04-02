@@ -121,6 +121,13 @@ GtProcessExecutor::onHelperFinished()
     auto command = gtApp->makeCommand(m_source, commandMsg);
     Q_UNUSED(command)
 
+
+
+    qDebug() << "Diff after task is:";
+    qDebug().noquote() << QString::fromUtf8(helper->sumDiff()->toByteArray());
+    qDebug() << "---end sumDiff";
+
+
     if (!m_source->applyDiff(*helper->sumDiff()))
     {
             gtErrorId(GT_EXEC_ID)

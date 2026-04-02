@@ -214,7 +214,8 @@ set(resources
     ${CMAKE_CURRENT_SOURCE_DIR}/../resources/templates/templates.qrc
 )
 
-add_library(GTlabCore ${headers} ${hdr_private} ${sources} ${resources})
+add_library(GTlabCore ${headers} ${hdr_private} ${sources} ${resources}
+    process_management/gt_jobcard.h process_management/gt_jobcard.cpp)
 add_library(GTlab::Core ALIAS GTlabCore)
 
 target_compile_definitions(GTlabCore PRIVATE GT_MODULE_ID="Core" GT_EXEC_ID="Exec")

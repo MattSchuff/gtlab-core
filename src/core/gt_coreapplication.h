@@ -237,6 +237,12 @@ public:
 
     void initProject(const QString &id = QString());
 
+    bool initJobCard(const QString &jobcardid = QString());
+
+    bool inJobcardMode() const;
+
+    const QString getJobcardId() const;
+
     /**
      * @brief switchSession
      * @param id
