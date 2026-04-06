@@ -389,6 +389,7 @@ GtCoreProcessExecutor::handleTaskFinishedHelper(
         qDebug().noquote() << QString::fromUtf8(sumDiff.toByteArray());
         qDebug() << "---end sumDiff";
 
+        task->setObjectMementoDiffAfterTask(sumDiff);
 
         if (!m_source->applyDiff(sumDiff))
         {

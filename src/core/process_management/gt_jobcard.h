@@ -1,7 +1,9 @@
 #ifndef GT_JOBCARD_H
 #define GT_JOBCARD_H
+/*
 #include "gt_core_exports.h"
 #include "gt_object.h"
+
 #include "gt_stringproperty.h"
 #include "gt_intproperty.h"
 #include "gt_propertystructcontainer.h"
@@ -50,12 +52,12 @@ public:
     };
 
     // Delete copy/move
-    /*
-    Registry(const Registry&) = delete;
-    Registry& operator=(const Registry&) = delete;
-    Registry(Registry&&) = delete;
-    Registry& operator=(Registry&&) = delete;
-    */
+
+  //  Registry(const Registry&) = delete;
+  //  Registry& operator=(const Registry&) = delete;
+   // Registry(Registry&&) = delete;
+   // Registry& operator=(Registry&&) = delete;
+
 
     GtJobCard* newJobcard();;
     const QList<GtJobCard*> all();
@@ -81,7 +83,7 @@ private:
 //inline gt::jobcard::Registry* objReg = &gt::jobcard::Registry::instance();
 #define gtJobcards (&gt::jobcard::Registry::instance())
 
-
+*/
 
 
 

@@ -89,7 +89,7 @@ GtCoreApplication::GtCoreApplication(QCoreApplication* parent, AppMode batch) :
     gtObjectFactory->registerClass(GT_METADATA(GtProcessData));
     gtObjectFactory->registerClass(GT_METADATA(GtTaskGroup));
 
-    gtObjectFactory->registerClass(GT_METADATA(GtJobCard));
+    //gtObjectFactory->registerClass(GT_METADATA(GtJobCard));
 }
 
 GtCoreApplication::~GtCoreApplication()
@@ -326,6 +326,9 @@ void GtCoreApplication::initProject(const QString &id)
     qDebug() << "This thread id:" << QThread::currentThreadId() ;
 }
 
+
+
+/*
 bool GtCoreApplication::initJobCard(const QString &jobcardid)
 {
     auto jobs = gtJobcards->all();
@@ -356,7 +359,7 @@ const QString GtCoreApplication::getJobcardId() const
     auto jc = gtJobcards->activeJobcard();
     if(!jc) return {};
     return jc->getJobId();
-}
+}*/
 
 void
 GtCoreApplication::initLogging()
@@ -733,7 +736,7 @@ QDir
 GtCoreApplication::applicationTempDir()
 {
     QDir retval;
-    if(gtApp->inJobcardMode())
+    /*if(gtApp->inJobcardMode())
     {
         qDebug() << "GtCoreApplication::applicationTempDir() -> jobcardmode";
 
@@ -750,14 +753,21 @@ GtCoreApplication::applicationTempDir()
         retval = QDir{jobtempdir};
     }
     else
-    {
-        retval = QDir{QCoreApplication::applicationDirPath() + QDir::separator()
-                + QStringLiteral("temp")};
-    }
+    {*/
+    GtProject* proj = gtApp->currentProject();
+    QDir projdir{proj->path()};
+    QDir tempdir {projdir.absoluteFilePath("temp")};
+    retval = tempdir;
+
+
+    //retval = QDir{QCoreApplication::applicationDirPath() + QDir::separator()
+    //            + QStringLiteral("temp")};
+    //}
 
     if (!retval.exists())
     {
-        retval = QDir(QCoreApplication::applicationDirPath());
+        //retval = QDir(QCoreApplication::applicationDirPath());
+        retval = projdir;
 
         if (!retval.mkpath(retval.absolutePath() + QDir::separator()
                            + QStringLiteral("temp")))

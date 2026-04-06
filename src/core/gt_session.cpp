@@ -262,17 +262,17 @@ void
 GtSession::switchCurrentProject()
 {
     QList<GtProject*> projTmp = projects();
-    qDebug() << "GtSession::switchCurrentProject()" << projTmp;
+    //qDebug() << "GtSession::switchCurrentProject()" << projTmp;
 
     if (projTmp.contains(m_currentProject))
     {
         projTmp.removeOne(m_currentProject);
     }
 
-    qDebug() << "GtSession::switchCurrentProject()2" << projTmp;
+    //qDebug() << "GtSession::switchCurrentProject()2" << projTmp;
     foreach (GtProject* project, projTmp)
     {
-        qDebug() << "project:" << project << project->isOpen();
+        //qDebug() << "project:" << project << project->isOpen();
         if (project->isOpen())
         { // cppcheck-suppress useStlAlgorithm
             setCurrentProject(project);

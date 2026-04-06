@@ -15,7 +15,7 @@
 
 
 
-
+/*
 
 struct GtJobCard::Impl
 {
@@ -76,12 +76,12 @@ private:
 };
 
 
-/*
-    GtPropertyStructContainer m_inputData;
-    QList<GtAbstractProperty*> m_inputData_cleanupList;
-    GtPropertyStructContainer m_outputData;
-    QList<GtAbstractProperty*> m_outputData_cleanupList;
-*/
+
+    // GtPropertyStructContainer m_inputData;
+    // QList<GtAbstractProperty*> m_inputData_cleanupList;
+    // GtPropertyStructContainer m_outputData;
+    // QList<GtAbstractProperty*> m_outputData_cleanupList;
+
 
 GtJobCard::GtJobCard():
     pimpl(std::make_unique<Impl>())
@@ -92,32 +92,32 @@ GtJobCard::GtJobCard():
     registerProperty(pimpl->projectName);
     registerProperty(pimpl->taskName);
 
-/*
-    auto makeMode = [&](const QString& id)
-    {
-        auto* p = new GtModeProperty(id, id, "");
 
-        QStringList vars;
-        vars << "PressureStagnationAbs";
-        vars << "TemperatureStagnationAbs";
-        vars << "VelocityAngleThetaAbs";
-        vars << "VelocityAngleR";
-        vars << "TurbulenceIntensityAbs";
-        vars << "TurbulentLengthScale";
+    // auto makeMode = [&](const QString& id)
+    // {
+    //     auto* p = new GtModeProperty(id, id, "");
 
-        foreach(QString var, vars)
-        {
-            GtModeTypeProperty* prop = new GtModeTypeProperty(var, var);
-            p->registerSubProperty(*prop);
-            m_cleanupList.append(prop);
-        }
+    //     QStringList vars;
+    //     vars << "PressureStagnationAbs";
+    //     vars << "TemperatureStagnationAbs";
+    //     vars << "VelocityAngleThetaAbs";
+    //     vars << "VelocityAngleR";
+    //     vars << "TurbulenceIntensityAbs";
+    //     vars << "TurbulentLengthScale";
 
-        return p;
-    };
+    //     foreach(QString var, vars)
+    //     {
+    //         GtModeTypeProperty* prop = new GtModeTypeProperty(var, var);
+    //         p->registerSubProperty(*prop);
+    //         m_cleanupList.append(prop);
+    //     }
 
-    GtPropertyStructDefinition fixedvar("Known Variable");
-    fixedvar.defineMember("Name", makeMode);
-    fixedvar.defineMember("Value", gt::makeDoubleProperty(0));*/
+    //     return p;
+    // };
+
+    // GtPropertyStructDefinition fixedvar("Known Variable");
+    // fixedvar.defineMember("Name", makeMode);
+    // fixedvar.defineMember("Value", gt::makeDoubleProperty(0));
 
     auto dts = Impl::DatatypesList();
 
@@ -229,3 +229,4 @@ GtJobCard *gt::jobcard::Registry::newJobcard() {
     appendChild(jc);
     return jc;
 }
+*/
