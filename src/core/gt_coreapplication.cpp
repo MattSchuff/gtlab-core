@@ -292,6 +292,8 @@ GtCoreApplication::initSession(const QString& id)
 
 void GtCoreApplication::initProject(const QString &id)
 {
+    qDebug() << "GtCoreApplication::initProject";
+    qDebug() << "curr proj:" << gtApp->currentProject();
     qDebug() << "User Defined project:" << id;
     qDebug() << "Known projects";
     foreach(auto _p, m_session->projects())
@@ -302,13 +304,21 @@ void GtCoreApplication::initProject(const QString &id)
     qDebug() << "Found project:" << projObj;
     if(projObj)
     {
+
         qDebug() << "setting project...";
-        m_session->setCurrentProject(projObj);
+       // m_session->setCurrentProject(projObj);
+        gtDataModel->openProject(projObj);
+        //m_session->loadProjectData(projObj);
         qDebug() << "...done setting project";
-        gtApp->settings()->setLastProject(id);
+       // qDebug() << "is Open:" << projObj->isOpen();
+         //GtCoreDatamodel::openProject(projObj);
+       // gtApp->settings()->setLastProject(id);
+      //  qDebug() << "is Open:" << projObj->isOpen();
+
     }
 
-    switchCurrentProject();
+    //switchCurrentProject();
+    qDebug() << "curr proj:" << gtApp->currentProject();
     qDebug() << "This thread:" << QThread::currentThread() ;
     qDebug() << "This thread id:" << QThread::currentThreadId() ;
 }
@@ -687,12 +697,39 @@ GtCoreApplication::version()
 QDir
 GtCoreApplication::applicationTempDir()
 {
-    QDir retval(QCoreApplication::applicationDirPath() + QDir::separator()
-                + QStringLiteral("temp"));
+    QDir retval;
+    /*if(gtApp->inJobcardMode())
+    {
+        qDebug() << "GtCoreApplication::applicationTempDir() -> jobcardmode";
+
+        GtProject* proj = gtApp->currentProject();
+        QDir projdir{proj->path()};
+        QDir tempdir {projdir.absoluteFilePath("temp" + QString(QDir::separator()) + "job")};
+        QDir jobtempdir {tempdir.absoluteFilePath(gtApp->getJobcardId())};
+
+        if (!jobtempdir.exists())
+        {
+            jobtempdir.mkpath(".");
+        }
+
+        retval = QDir{jobtempdir};
+    }
+    else
+    {*/
+    GtProject* proj = gtApp->currentProject();
+    QDir projdir{proj->path()};
+    QDir tempdir {projdir.absoluteFilePath("temp")};
+    retval = tempdir;
+
+
+    //retval = QDir{QCoreApplication::applicationDirPath() + QDir::separator()
+    //            + QStringLiteral("temp")};
+    //}
 
     if (!retval.exists())
     {
-        retval = QDir(QCoreApplication::applicationDirPath());
+        //retval = QDir(QCoreApplication::applicationDirPath());
+        retval = projdir;
 
         if (!retval.mkpath(retval.absolutePath() + QDir::separator()
                            + QStringLiteral("temp")))

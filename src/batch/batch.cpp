@@ -25,9 +25,7 @@
 #include "gt_consoleupgradeproject.h"
 
 #include "gt_coreapplication.h"
-#include "gt_coreprocessexecutor.h"
 
-//#include "gt_coreapplication.h"
 #include "gt_coredatamodel.h"
 #include "gt_project.h"
 #include "gt_footprint.h"
@@ -37,6 +35,8 @@
 #include "gt_hostinfo.h"
 #include "gt_remoteprocessrunner.h"
 #include "settings/gt_settings.h"
+
+
 
 int displayList(const QStringList&);
 
@@ -852,6 +852,11 @@ int main(int argc, char* argv[])
                      "Defines a session to be used for "
                      "execution."
                      "\n\t\t\tUsage: --session <session_id>");
+    parser.addOption("project",
+                     {"project", "pr"},
+                     "Defines a project to be used for "
+                     "execution"
+                     "\n\t\t\tUsage: --project <project_id>");
     parser.addOption("version",
                      {"version", "v"},
                      "\tDisplays the version number of GTlab");
@@ -917,6 +922,18 @@ int main(int argc, char* argv[])
     else
     {
         app.initSession();
+    }
+
+    if (parser.option("project"))
+    {
+        QString projectValue = parser.optionValue("project").toString();
+        std::cout << "Select project: " << projectValue.toStdString()
+                  << std::endl;
+        app.initProject(projectValue);
+    }
+    else
+    {
+        //
     }
 
     if (!app.session())

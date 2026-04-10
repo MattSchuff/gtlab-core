@@ -239,7 +239,7 @@ GtSession::setCurrentProject(const QString& id)
 
 bool
 GtSession::setCurrentProject(GtProject* project)
-{
+{   
     if (!project)
     {
         m_currentProject = nullptr;

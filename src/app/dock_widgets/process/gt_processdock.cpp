@@ -998,14 +998,7 @@ GtProcessDock::runProcess()
                     terminateProcess();
                 }
                 else
-                {
-                    gtFatal() << "gt::currentProcessExecutor().runTask(task)";
-                    gtFatal() << task;
-
-                    gtInfo() << "This thread:" << QThread::currentThread() ;
-                    gtInfo() << "This thread id:" << QThread::currentThreadId() ;
-                    gtInfo() << "Thread of datamodel:" << gtDataModel->thread();
-                    gtInfo() << "Thread of datamodel:" << gtDataModel->thread();
+                {                    
                     gt::currentProcessExecutor().runTask(task);
                 }
             }

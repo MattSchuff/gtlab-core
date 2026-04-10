@@ -154,6 +154,10 @@ public:
 
     bool applyMementoEvenWhenCalculatorFails();
 
+
+    const GtObjectMementoDiff& objectMementoDiffAfterTask();
+    void setObjectMementoDiffAfterTask(const GtObjectMementoDiff& diff);
+
 public slots:
     /**
      * @brief Called when monitoring data is available.

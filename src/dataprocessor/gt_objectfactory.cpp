@@ -29,7 +29,7 @@ GtObjectFactory::GtObjectFactory(QObject* parent) : QObject(parent)
                           GT_METADATA(GtLabelData));
 
     m_knownClasses.insert(GT_CLASSNAME(GtPropertyConnection),
-                          GT_METADATA(GtPropertyConnection));             
+                          GT_METADATA(GtPropertyConnection));
 }
 
 GtObjectFactory*

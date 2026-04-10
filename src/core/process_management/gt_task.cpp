@@ -49,6 +49,8 @@ struct GtTask::Impl
     };
 
     GtBoolProperty applyMementoEvenWhenCalculatorFails{"applyMementoEvenWhenCalculatorFails", "Apply memento on fail", "", false};
+
+    GtObjectMementoDiff objectMementoDiffAfterTask;
 };
 
 GtTask::GtTask() :
@@ -670,6 +672,16 @@ bool
 GtTask::applyMementoEvenWhenCalculatorFails()
 {
     return this->pimpl->applyMementoEvenWhenCalculatorFails.getVal();
+}
+
+void GtTask::setObjectMementoDiffAfterTask(const GtObjectMementoDiff &diff)
+{
+    pimpl->objectMementoDiffAfterTask = std::move(diff);
+}
+
+const GtObjectMementoDiff &GtTask::objectMementoDiffAfterTask()
+{
+    return pimpl->objectMementoDiffAfterTask;
 }
 
 QList<GtPropertyConnection*>

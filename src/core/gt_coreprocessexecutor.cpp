@@ -376,6 +376,13 @@ GtCoreProcessExecutor::handleTaskFinishedHelper(
             }
         }
 
+
+        qDebug() << "Diff after task is:";
+        qDebug().noquote() << QString::fromUtf8(sumDiff.toByteArray());
+        qDebug() << "---end sumDiff";
+
+        task->setObjectMementoDiffAfterTask(sumDiff);
+
         if (!m_source->applyDiff(sumDiff))
         {
             gtWarningId(GT_EXEC_ID) << tr("Failed to apply memento diff!");

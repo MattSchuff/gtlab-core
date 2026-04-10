@@ -41,7 +41,23 @@ GtObjectMementoDiff::GtObjectMementoDiff(const GtObjectMemento& left,
 
 GtObjectMementoDiff::GtObjectMementoDiff(const QByteArray& byteArray)
 {
-    setContent(byteArray);
+    QString errorMsg;
+    int errorLine, errorColumn;
+    bool ok = setContent(byteArray, &errorMsg, &errorLine, &errorColumn);
+
+    if(!ok)
+    {
+        gtTrace() << "QDomDocument, parse error:" << errorMsg
+                 << "at line" << errorLine
+                 << "column" << errorColumn;
+        auto lines = QString::fromUtf8(byteArray).split("\n");
+        gtTrace() << lines[errorLine-1];
+        QString marker="";
+        for(int i=0;i<errorColumn-1;i++) {
+            marker += "-";
+        }
+        gtTrace() << marker+"^";
+    }
 }
 
 GtObjectMementoDiff::GtObjectMementoDiff()
