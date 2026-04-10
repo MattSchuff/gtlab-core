@@ -47,16 +47,16 @@ GtObjectMementoDiff::GtObjectMementoDiff(const QByteArray& byteArray)
 
     if(!ok)
     {
-        qDebug().noquote() << "QDomDocument, parse error:" << errorMsg
+        gtTrace() << "QDomDocument, parse error:" << errorMsg
                  << "at line" << errorLine
                  << "column" << errorColumn;
         auto lines = QString::fromUtf8(byteArray).split("\n");
-        qDebug().noquote() << lines[errorLine-1];
+        gtTrace() << lines[errorLine-1];
         QString marker="";
         for(int i=0;i<errorColumn-1;i++) {
             marker += "-";
         }
-        qDebug().noquote() << marker+"^";
+        gtTrace() << marker+"^";
     }
 }
 
@@ -172,16 +172,6 @@ GtObjectMementoDiff::numberOfDiffSteps()
     }
 
     int retval = 0;
-
-    /*
-    qDebug() << "GtObjectMementoDiff::numberOfDiffSteps()" << this->childNodes().count();
-    for(int i=0; i< this->childNodes().count(); i++)
-    {
-        QString xml;
-        QTextStream stream(&xml);
-        this->childNodes().at(i).save(stream, 2);
-        qDebug() << i << ":" << xml;
-    }*/
 
     QDomElement parent = firstChildElement(gt::xml::S_OBJECT_TAG);
 

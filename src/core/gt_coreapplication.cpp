@@ -24,7 +24,6 @@
 
 #include "gt_coreapplication.h"
 #include "gt_externalizationmanager.h"
-#include "gt_jobcard.h"
 #include "gt_objectfactory.h"
 #include "gt_processfactory.h"
 #include "gt_session.h"
@@ -88,8 +87,6 @@ GtCoreApplication::GtCoreApplication(QCoreApplication* parent, AppMode batch) :
     // register data classes of core lib here
     gtObjectFactory->registerClass(GT_METADATA(GtProcessData));
     gtObjectFactory->registerClass(GT_METADATA(GtTaskGroup));
-
-    //gtObjectFactory->registerClass(GT_METADATA(GtJobCard));
 }
 
 GtCoreApplication::~GtCoreApplication()
@@ -325,41 +322,6 @@ void GtCoreApplication::initProject(const QString &id)
     qDebug() << "This thread:" << QThread::currentThread() ;
     qDebug() << "This thread id:" << QThread::currentThreadId() ;
 }
-
-
-
-/*
-bool GtCoreApplication::initJobCard(const QString &jobcardid)
-{
-    auto jobs = gtJobcards->all();
-
-    //TODO: find jobcard info
-
-    GtJobCard* jc = gtJobcards->activeJobcard();
-
-    jc = new GtJobCard();
-    jc->setObjectName("my card");
-    //jc->setI
-
-    // TODO:not found handling
-
-    qDebug() << "Running in Jobcard mode! Jobcard: " << jc->objectName() << "("+jc->uuid()+")";
-
-
-    return true;
-}
-
-bool GtCoreApplication::inJobcardMode() const
-{
-    return gtJobcards->activeJobcard() != nullptr;
-}
-
-const QString GtCoreApplication::getJobcardId() const
-{
-    auto jc = gtJobcards->activeJobcard();
-    if(!jc) return {};
-    return jc->getJobId();
-}*/
 
 void
 GtCoreApplication::initLogging()

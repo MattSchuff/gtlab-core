@@ -23,9 +23,6 @@
 
 #include "gt_taskrunner.h"
 
-//#include "gt_objectfactory.h"
-
-
 GtTaskRunner::GtTaskRunner(GtTask* task) : m_task(task), m_runnable(nullptr),
     m_source(nullptr)
 {
@@ -137,7 +134,7 @@ GtTaskRunner::run()
     QThreadPool* tp = QThreadPool::globalInstance();
 
     // start runnable
-    tp->start(m_runnable);
+    tp->start(m_runnable);        
 }
 
 const QList<GtObjectMemento>&
@@ -261,28 +258,6 @@ GtTaskRunner::setupElements(GtProcessComponent* orig,
     return true;
 }
 
-/*
-inline QString stringrepeat(const QString& input, size_t num)
-{
-    std::ostringstream os;
-    std::fill_n(std::ostream_iterator<std::string>(os), num, input.toStdString());
-    return QString::fromStdString(os.str());
-}
-
-inline void _printObjectWithChildren(GtObject* x, int lvl=0)
-{
-    QString intend = stringrepeat("  ", lvl);
-    qDebug() << intend << x << "->" << x->objectPath();
-    //qDebug() << intend << "   p:"  << x->parentObject();
-    qDebug() << intend << "   c:";
-    foreach(auto c, x->findDirectChildren())
-    {
-        _printObjectWithChildren(c, lvl+1);
-    }
-
-}*/
-
-
 void
 GtTaskRunner::handleRunnableFinished()
 {
@@ -297,13 +272,6 @@ GtTaskRunner::handleRunnableFinished()
 
     disconnect(m_runnable.data(), &GtAbstractRunnable::runnableFinished,
                this, &GtTaskRunner::handleRunnableFinished);
-
-    //qDebug() << "================================OUTPUTDATA================================";
-    //foreach(auto x, m_runnable->outputData())
-    //{
-    //    _printObjectWithChildren(x.toObject(*GtObjectFactory::instance()).get(),0);
-    //}
-    //qDebug() << "================================END OUTPUTDATA================================";
 
     m_dataToMerge.append(m_runnable->outputData());
 

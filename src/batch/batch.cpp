@@ -18,22 +18,14 @@
 #include <QDir>
 #include <QDebug>
 #include <QSettings>
-#include <QStringLiteral>
-#include <gt_objectfactory.h>
-#include <gt_objectmementodiff.h>
 
-#include "gt_doubleproperty.h"
-#include "gt_jobcard.h"
-#include "gt_structproperty.h"
 #include "internal/gt_commandlinefunctionhandler.h"
 #include "batchremote.h"
 #include "gt_consolerunprocess.h"
 #include "gt_consoleupgradeproject.h"
 
 #include "gt_coreapplication.h"
-#include "gt_coreprocessexecutor.h"
 
-//#include "gt_coreapplication.h"
 #include "gt_coredatamodel.h"
 #include "gt_project.h"
 #include "gt_footprint.h"
@@ -45,7 +37,6 @@
 #include "settings/gt_settings.h"
 
 
-#include "gt_processdata.h"
 
 int displayList(const QStringList&);
 
@@ -719,414 +710,6 @@ switch_session(const QStringList& args)
     return 0;
 }
 
-
-
-/*
-inline QString stringrepeat(const QString& input, size_t num)
-{
-    std::ostringstream os;
-    std::fill_n(std::ostream_iterator<std::string>(os), num, input.toStdString());
-    return QString::fromStdString(os.str());
-}
-
-inline void _printObjectWithChildren(GtObject* x, int lvl=0)
-{
-    QString intend = stringrepeat("  ", lvl);
-    qDebug().noquote() << intend << x << "->" << x->objectPath() << x->uuid();
-
-    qDebug().noquote() << intend << "   props:";
-    foreach(auto p, x->properties())
-    {
-        qDebug().noquote() << "   -" << p->objectName() <<":" << p->valueToVariant();
-    }
-    qDebug().noquote() << intend << "   container:";
-    foreach(auto pc, x->propertyContainers())
-    {
-        auto& pc1 = pc.get();
-        qDebug() << "   - "<< pc1.name();
-
-        for(int i=0;i<pc1.size();i++)
-        {
-            GtPropertyStructInstance &propinstance = pc1.at(i);
-            //r += QString::number(i)+": " + x +", " + x.typeName() +", " + x +"\n";
-            qDebug().noquote() << "   -" << propinstance;
-
-            foreach(auto var, propinstance.properties())
-            {
-                qDebug().noquote() << "     -" << var->objectName()<< " (" << var << ")" << ":" << var->valueToVariant();
-
-
-            }
-
-
-        }
-    }
-
-
-    qDebug().noquote() << intend << "   c:";
-    foreach(auto c, x->findDirectChildren())
-    {
-        _printObjectWithChildren(c, lvl+1);
-    }
-}
-
-inline void _printLinkedObjects2(QList<GtObject*>& linkedObjects)
-{
-    for(int i=0; i<linkedObjects.size(); i++)
-    {
-        auto x = linkedObjects.at(i);
-        qDebug().noquote() << "parent:"  << x->parentObject() << x->parentObject()->uuid();
-        _printObjectWithChildren(x);
-    }
-}
-
-
-int
-run_jobcard(const QStringList& args)
-{
-    if (args.size() != 1)
-    {
-        // print usage message
-        std::cout << QObject::tr("jobcard: Invalid arguments\n\n")
-                         .toStdString();
-
-        auto func = GtCommandLineFunctionHandler::instance().getFunction(
-            "jobcard");
-
-        assert(func);
-
-        func.showDefaultHelp();
-
-        return 1;
-    }
-
-    qDebug() << "args:" << args;
-
-    QString jobcardID = args[0];
-
-    qDebug() << "jobcard_id" << jobcardID;
-
-
-    //bool ok = gtApp->initJobCard(jobcardID);
-
-    bool ok=true;
-
-
-    QString xmlString = QString("<object name=\"xx\" class=\"GtJobCard\" uuid=\"{X26a1c6f-cbe2-48e0-9b4e-39e3832da7b1}\"> "
-                          "          <property type=\"QString\" name=\"jobid\">{Y26a1c6f-cbe2-48e0-9b4e-39e3832da7b1}</property> "
-                                "          <property type=\"QString\" name=\"sessionId\">sandbox-core</property> "
-                                "          <property type=\"QString\" name=\"projectName\">SandboxCore</property> "
-                                "          <property type=\"QString\" name=\"taskName\">task1</property> "
-                          "       <property-container name=\"inputData\"> "
-
-                          "       <property type=\"String\" name=\"{f60652cc-524f-4e64-a242-9c76508eddf2}\"> "
-                           "      <property type=\"QString\" name=\"target-obj-uuid\">target-abc-uuid</property> "
-                            "     <property type=\"QString\" name=\"target-obj-path\">MyPkgXyz</property>"
-                             "    <property type=\"QString\" name=\"property-id\">input1</property>"
-                               "  <property type=\"QString\" name=\"value\">myvalue</property>"
-                         "        </property>"
-                          "       <property type=\"Double\" name=\"{32d61660-bdf0-44b2-876d-f86b9338ea8e}\">"
-                           "                      <property type=\"QString\" name=\"target-obj-uuid\">target-abc2-uuid</property>"
-                            "       <property type=\"QString\" name=\"target-obj-path\">MyPkgXyz2</property>"
-                             "      <property type=\"QString\" name=\"property-id\">input2</property>"
-                              "     <property type=\"double\" name=\"value\">2.1</property>"
-                               "    </property>"
-                                 "   <property type=\"Object UUID\" name=\"{a2d61660-bdf0-44b2-876d-f86b9338ea8e}\">"
-                                  "                      <property type=\"QString\" name=\"target-obj-uuid\">target-abc3-uuid</property>"
-                                  "       <property type=\"QString\" name=\"target-obj-path\">MyPkgXyz3</property>"
-                                  "      <property type=\"QString\" name=\"property-id\">input3</property>"
-                                  "     <property type=\"QString\" name=\"value\">{target-uuid-objlink}</property>"
-                                  "    </property>"
-                              "   </property-container>"
-                               "  <property-container name=\"outputData\"/>"
-                                "                             </object>");
-
-
-    QDomDocument doc;
-    QString errorMsg;
-    int errorLine, errorColumn;
-    if (!doc.setContent(xmlString, &errorMsg, &errorLine, &errorColumn)) {
-        qDebug() << "Parse error:" << errorMsg
-                 << "at line" << errorLine
-                 << "column" << errorColumn;
-        return 1;
-    }
-
-    // Get the root element
-    QDomElement rootElement = doc.documentElement();
-    GtObjectMemento memento{rootElement};
-    qDebug().noquote() << QString::fromUtf8(memento.toByteArray());
-
-
-    auto jc = new GtJobCard;
-    jc->setFactory(GtObjectFactory::instance());
-    jc->fromMemento(memento);
-
-    qDebug().noquote() << jc << jc->getJobId();
-    qDebug().noquote() << jc->debugInfo();
-
-    if (ok)
-    {
-        std::cout << QObject::tr("Starting Job Card '%1'\n")
-        .arg(jobcardID)
-            .toStdString();
-    }
-    else
-    {
-        std::cout << QObject::tr("Job Card '%1' doesn't exist\n")
-        .arg(jobcardID)
-            .toStdString();
-    }
-
-
-    GtProject* proj = gtApp->currentProject();
-    if(proj)
-    {
-        qDebug() << "closing current project";
-        gtDataModel->closeProject(proj);
-    }
-
-    qDebug() << "open project...";
-    gtDataModel->openProject("SandboxCore");
-
-    proj = gtApp->currentProject();
-    qDebug() << "proj:" << proj;
-
-
-
-    // qDebug() << "taskids:" << proj->taskIds();
-
-    // GtProcessData* processData = proj->processData();
-    // qDebug() << "processData:" << processData;
-
-    // qDebug().noquote() << gt::console::getTask(proj, "task1");
-    // qDebug().noquote() << gt::console::getTask(proj, "task2");
-    // qDebug().noquote() << gt::console::getTask(proj, "task3");
-    // qDebug().noquote() << gt::console::getTask(proj, "task3");
-    // qDebug().noquote() << gt::console::getTask(proj, "task4");
-    // qDebug().noquote() << gt::console::getTask(proj, "task4", "dev1");
-
-
-
-    // t = gt::console::getTask(proj, "task3", "dev1");
-    // auto f = t->findDirectChild<GtProcessComponent*>("f");
-    // auto s = t->findDirectChild<GtProcessComponent*>("s");
-    // qDebug() << "f:" << f;
-    // qDebug() << "s:" << s;
-    // auto fv = f->findProperty("value");
-    // auto sv = s->findProperty("value");
-    // QVariant valstr = jc->getValueX();
-    // QVariant valdbl = jc->getValueY();
-    // //qDebug() << "valstr:" << valstr.type() << valstr.typeName();
-    // //qDebug() << "valdbl:" << valdbl.type() << valdbl.typeName();
-    // auto fv1 = qobject_cast<GtDoubleProperty*>(fv);
-    // //    fv1->setVal(1.2);
-    // auto sv1 = qobject_cast<GtStringProperty*>(sv);
-    // //sv1->setVal("foobar");
-
-
-    GtTask* t;
-    t = gt::console::getTask(proj, "Task V", "dev1");
-    //t->resetMonitoringProperties();
-    auto taskparent = t->parentObject();
-    qDebug() << "taskparent:" << taskparent;
-
-
-    // QStringList xmlStrings = {QString(""
-    //                     " <object uuid=\"{876fb998-c251-4e65-9188-99a65cdc2d55}\" class=\"gt::processstorage::process::tasks::TaskWithStorage\" name=\"Task V\">"
-    //                     "   <diff-property-change type=\"QString\" name=\"storage\">"
-    //                     "     <oldVal></oldVal>"
-    //                     "     <newVal>{35cd775d-b822-4fad-970e-5dff8e2ccb59}</newVal>"
-    //                     "    </diff-property-change>"
-    //                     " </object>"),
-    //                     QString(" <object uuid=\"{ecc335a4-3595-416e-82fc-7e3fef1ea7c5}\" class=\"GtpyScriptCalculator\" name=\"Python Script Editor\">"
-    //                     "  <diff-property-container-entry-change entryName=\"{03153163-0b74-44cd-ad66-79815a58b4c1}\" name=\"input_args\">"
-    //                     "   <diff-property-change type=\"double\" name=\"value\">"
-    //                     "    <oldVal>0</oldVal>"
-    //                     "    <newVal>1.8</newVal>"
-    //                     "   </diff-property-change>"
-    //                     "  </diff-property-container-entry-change>"
-    //                     " </object>"
-    //                     "")};
-
-
-
-    // bool ok2 = true;
-    // foreach (auto xmlString1, xmlStrings)
-    // {
-    //     GtObjectMementoDiff diff{xmlString1.toUtf8()};
-    //     //qDebug().noquote() << "diff:" << QString::fromUtf8(diff.toByteArray());
-    //     bool ok3 = taskparent->applyDiff(diff);
-    //     if(!ok3) ok2 = false;
-    // }
-
-
-
-
-
-
-//     xmlString = QString(R"(<?xml version="1.0" encoding="UTF-8"?>
-// <object name="addx1" class="gt::processstorage::process::calculators::AddDouble" uuid="{e470b2e1-e7e3-4a19-baef-fed94de3e6b4}">
-//   <diff-property-change name="value" type="double">
-//     <oldVal>4.1</oldVal>
-//     <newVal>5.1</newVal>
-//   </diff-property-change>
-// </object>
-// <object name="addx2" class="gt::processstorage::process::calculators::AddDouble" uuid="{07d5911e-874e-43b0-9c34-4c7fac6d0874}">
-//   <diff-property-change name="value" type="double">
-//     <oldVal>4.2</oldVal>
-//     <newVal>4.52</newVal>
-//   </diff-property-change>
-// </object>
-// )");
-
-
-    QStringList xmlStrings;
-
-
-//     xmlStrings = QStringList{
-// QString(R"(
-// <object uuid="{876fb998-c251-4e65-9188-99a65cdc2d55}" class="gt::processstorage::process::tasks::TaskWithStorage" name="Task V">
-//    <diff-property-change type="QString" name="storage">
-//      <oldVal></oldVal>
-//      <newVal>{35cd775d-b822-4fad-970e-5dff8e2ccb59}</newVal>
-//     </diff-property-change>
-//  </object>
-// )"),
-// QString(R"(
-// <object class="GtpyScriptCalculator" name="Python Script Editor" uuid="{ecc335a4-3595-416e-82fc-7e3fef1ea7c5}">
-//  <diff-property-container-entry-change name="input_args" entryName="{03153163-0b74-44cd-ad66-79815a58b4c1}">
-//   <diff-property-change name="value" type="double">
-//    <oldVal>0</oldVal>
-//    <newVal>8.9</newVal>
-//   </diff-property-change>
-//  </diff-property-container-entry-change>
-// </object>
-// )")
-//     };
-
-
-    xmlStrings.clear();
-    xmlStrings <<  QString(R"(
-<object uuid="{876fb998-c251-4e65-9188-99a65cdc2d55}">
-   <diff-property-change type="QString" name="storage">
-     <oldVal></oldVal>
-     <newVal>{35cd775d-b822-4fad-970e-5dff8e2ccb59}</newVal>
-    </diff-property-change>
- </object>
-)");
-    xmlStrings << QString(R"(
-<object uuid="{ecc335a4-3595-416e-82fc-7e3fef1ea7c5}">
- <diff-property-container-entry-change name="input_args" entryName="{03153163-0b74-44cd-ad66-79815a58b4c1}">
-  <diff-property-change name="value" type="double">
-     <oldVal>-15.0</oldVal>
-   <newVal>8.9</newVal>
-  </diff-property-change>
- </diff-property-container-entry-change>
-</object>
-)");
-    // QDomDocument reader setContant in GtObjectMementoDiff
-    // constructor accepts only one <object> on hightest level
-    ok = true;
-    foreach(auto xmlString, xmlStrings)
-    {
-        GtObjectMementoDiff diff{xmlString.toUtf8()};
-        qDebug() << "Diff steps:" << diff.numberOfDiffSteps();
-        bool ok2 = taskparent->applyDiff(diff);
-        if(!ok2) ok = false;
-    }
-
-    qDebug() << "task after diff:";
-    QList<GtObject*> mylist;
-    mylist<<t;
-    _printLinkedObjects2(mylist);
-
-    if(ok)
-    {
-
-        gt::currentProcessExecutor().runTask(t);
-
-
-        //gt::console::runProcess(proj->objectName(),"Task V","dev1");
-    }
-
-
-    // if (valdbl.type() == QVariant::Double)
-    // {
-    //     qDebug() << "double";
-
-    //     if( qobject_cast<GtDoubleProperty*>(fv))
-    //     {
-    //         qDebug() << "fv is double";
-
-    //     }
-
-    //     if( qobject_cast<GtDoubleProperty*>(sv))
-    //     {
-    //         qDebug() << "sv is double";
-
-    //     }
-
-
-    // }
-
-
-
-    // qDebug() << proj->findProcess("task1");
-    // qDebug() << proj->findProcess("task2");
-    // qDebug() << proj->findProcess("task3");
-    //
-
-
-
-    //gt::console::run({"SandboxCore", "task1"});
-
-
-    // DEBUG:
-
-//     QDomDocument domDoc;
-//     xmlString = QString(R"(<?xml version="1.0" encoding="UTF-8"?>
-// <object name="addx1" class="gt::processstorage::process::calculators::AddDouble" uuid="{e470b2e1-e7e3-4a19-baef-fed94de3e6b4}">
-//   <diff-property-change name="value" type="double">
-//     <oldVal>4.1</oldVal>
-//     <newVal>5.1</newVal>
-//   </diff-property-change>
-// </object>
-// <object name="addx2" class="gt::processstorage::process::calculators::AddDouble" uuid="{07d5911e-874e-43b0-9c34-4c7fac6d0874}">
-// <diff-property-change name="value" type="double">
-//     <oldVal>4.2</oldVal>
-//     <newVal>4.52</newVal>
-//   </diff-property-change>
-// </object>
-// )");
-
-//     qDebug().noquote() << "xmlString:" << xmlString;
-//     ok = domDoc.setContent(xmlString.toUtf8(), &errorMsg, &errorLine, &errorColumn);
-//     if(!ok) {
-//         qDebug() << "Parse error:" << errorMsg
-//                  << "at line" << errorLine
-//                  << "column" << errorColumn;
-//         qDebug().noquote() << "QDomDocument, parse error:" << errorMsg
-//                            << "at line" << errorLine
-//                            << "column" << errorColumn;
-//         auto lines = QString::fromUtf8(xmlString.toUtf8()).split("\n");
-//         qDebug().noquote() << lines[errorLine-1];
-//         QString marker="";
-//         for(int i=0;i<errorColumn;i++) {
-//             marker += "-";
-//         }
-//         qDebug().noquote() << marker+"^";
-//     }
-//     qDebug() << domDoc.childNodes().count();
-
-
-
-    return 0;
-}
-
-*/
-
-
 void
 initPosArgument(QString const& id,
                 std::function<int(const QStringList&)> func,
@@ -1203,11 +786,6 @@ initSystemOptions()
                     "Upgrades All Modules in the current project", {},
                     QList<GtCommandLineArgument>(),
                     false);
-
-
-    // initPosArgument("jobcard", run_jobcard,
-    //                "Run a JobCard", {},
-    //                {GtCommandLineArgument{"jobcard_id", "Jobcard ID"}});
 }
 
 int
@@ -1276,11 +854,9 @@ int main(int argc, char* argv[])
                      "\n\t\t\tUsage: --session <session_id>");
     parser.addOption("project",
                      {"project", "pr"},
-                     "Defines a project to be user for "
+                     "Defines a project to be used for "
                      "execution"
                      "\n\t\t\tUsage: --project <project_id>");
-
-
     parser.addOption("version",
                      {"version", "v"},
                      "\tDisplays the version number of GTlab");
@@ -1359,9 +935,6 @@ int main(int argc, char* argv[])
     {
         //
     }
-
-
-
 
     if (!app.session())
     {

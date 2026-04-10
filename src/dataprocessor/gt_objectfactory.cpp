@@ -16,6 +16,7 @@
 #include "gt_labeldata.h"
 #include "gt_propertyconnection.h"
 
+
 GtObjectFactory::GtObjectFactory(QObject* parent) : QObject(parent)
 {
     m_knownClasses.insert(GT_CLASSNAME(GtObjectGroup),
@@ -29,7 +30,6 @@ GtObjectFactory::GtObjectFactory(QObject* parent) : QObject(parent)
 
     m_knownClasses.insert(GT_CLASSNAME(GtPropertyConnection),
                           GT_METADATA(GtPropertyConnection));
-
 }
 
 GtObjectFactory*

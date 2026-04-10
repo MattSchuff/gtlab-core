@@ -313,10 +313,6 @@ GtCoreProcessExecutor::execute()
     }
 }
 
-
-
-
-
 void
 GtCoreProcessExecutor::handleTaskFinishedHelper(
         QList<GtObjectMemento>& changedData, GtTask* task)
@@ -335,7 +331,6 @@ GtCoreProcessExecutor::handleTaskFinishedHelper(
     {
         QDir tempDir;
 
-
         tempDir = gtApp->applicationTempDir();
 
         GtObjectMementoDiff sumDiff;
@@ -348,7 +343,6 @@ GtCoreProcessExecutor::handleTaskFinishedHelper(
 
             GtObject* target = m_source->getObjectByUuid(memento.uuid());
 
-            qDebug() << "target:" << target;
             if (target)
             {
                 gtDebugId(GT_EXEC_ID).medium()
@@ -360,8 +354,6 @@ GtCoreProcessExecutor::handleTaskFinishedHelper(
                 QString filename = target->objectName() +
                                    QStringLiteral(".xml");
 
-                qDebug() << "target filename:" << filename;
-                qDebug() << "file path:" << tempDir.absoluteFilePath(filename);
                 QFile file(tempDir.absoluteFilePath(filename));
 
                 if (file.open(QFile::WriteOnly))
