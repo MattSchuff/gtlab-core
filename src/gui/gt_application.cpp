@@ -29,6 +29,7 @@
 #include "gt_icons.h"
 #include "gt_shortcuts.h"
 #include "gt_projectui.h"
+#include "gt_project.h"
 
 #include <QMessageBox>
 #include <QIcon>
@@ -870,5 +871,17 @@ GtApplication::onGuiInitializationFinished()
     emit themeChanged(m_darkMode);
 
     initModules();
-}
 
+    GtProject* proj = this->currentProject();
+    qDebug() << "GtApplication::onGuiInitializationFinished -> Project:" << proj;
+    if(proj)
+    {
+        qDebug() << "GtApplication::onGuiInitializationFinished -> load project:" << proj << proj->isOpen();
+        if(proj->isOpen())
+        {
+            qDebug() << "close project:" << gtDataModel->closeProject(proj);
+        }
+        setCurrentProject(nullptr);
+        gtDataModel->openProject(proj);
+    }
+}

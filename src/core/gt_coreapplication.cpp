@@ -304,19 +304,13 @@ GtCoreApplication::initProject(const QString &id)
         qDebug() << "- "<<_p->objectName();
     }
 
-
-    if(gtApp->currentProject())
-    {
-        qDebug() << "closing current project...";
-        gtDataModel->GtCoreDatamodel::closeProject(gtApp->currentProject());
-    }
-
     GtProject* projObj = m_session->findProject(id);
     qDebug() << "Found project:" << projObj;
 
     if(projObj)
     {
-        qDebug() << "open project...";
+        qDebug() << "set project to load...";
+        //gtApp->setCurrentProject(projObj);
         gtDataModel->GtCoreDatamodel::openProject(projObj);
     }
 }
