@@ -46,7 +46,7 @@ struct GtCoreProcessExecutor::Impl
     /// Pointer to current runnable
     QPointer<GtRunnable> currentRunnable;
 
-    QList<QPointer<GtProcessExecutionInfo>> processRunInfo;
+    QHash<GtTask*, GtProcessExecutionInfo*> processRunInfo;
 };
 
 GtCoreProcessExecutor::GtCoreProcessExecutor(QObject* parent, Flags flags) :
@@ -233,7 +233,7 @@ GtCoreProcessExecutor::queueTask(GtTask* task)
     task->resetMonitoringProperties();
 
     m_queue.append(task);
-    pimpl->processRunInfo.append(Q_NULLPTR);
+    pimpl->processRunInfo[task] = Q_NULLPTR;
 
     emit queueChanged();
 
@@ -275,7 +275,11 @@ GtProcessExecutionInfo* GtCoreProcessExecutor::queueTask2(GtTask *task)
     GtProcessExecutionInfo* processExecRunInfo = new GtProcessExecutionInfo;
     processExecRunInfo->setProcessState(GtProcessComponent::QUEUED);
     processExecRunInfo->setQueuedTimeNow();
-    pimpl->processRunInfo.append(processExecRunInfo);
+    pimpl->processRunInfo[task] = processExecRunInfo;
+
+
+    qDebug().noquote() << "Task run info:" << task << pimpl->processRunInfo.contains(task);
+    if(pimpl->processRunInfo.contains(task)) qDebug().noquote() << "info:" << pimpl->processRunInfo[task];
 
     emit queueChanged();
 
@@ -371,7 +375,12 @@ GtCoreProcessExecutor::execute()
 
         connect(runner, &QObject::destroyed, &eventLoop, &QEventLoop::quit);
 
-        // run
+        if(pimpl->processRunInfo.contains(m_current))
+        {
+            pimpl->processRunInfo[m_current]->setStartTimeNow();
+        }
+
+        // run        
         runner->run();
 
         // wait for event loop to finish
@@ -452,6 +461,22 @@ GtCoreProcessExecutor::handleTaskFinishedHelper(
 
         task->setObjectMementoDiffAfterTask(sumDiff);
 
+        qDebug().noquote() << "Task run info:" << task << pimpl->processRunInfo.contains(task);
+        if(pimpl->processRunInfo.contains(task)) qDebug().noquote() << "info:" << pimpl->processRunInfo[task];
+
+        if(pimpl->processRunInfo.contains(task))
+        {
+            auto _x = pimpl->processRunInfo[task];
+            _x->setProcessState(task->currentState());
+            _x->setDataDiffToMerge(task->objectMementoDiffAfterTask());
+            _x->setDataDiffToMerge(task->objectMementoDiffAfterTask());
+            _x->setEndTimeNow();
+        }
+        else
+        {
+            gtWarningId(GT_EXEC_ID) << tr("No process run info object available for task");
+        }
+
         if (!m_source->applyDiff(sumDiff))
         {
             gtWarningId(GT_EXEC_ID) << tr("Failed to apply memento diff!");
@@ -506,6 +531,7 @@ GtCoreProcessExecutor::clearCurrentTask()
 
     // remove from queue
     m_queue.removeAll(m_current);
+    //pimpl->processRunInfo.remove(m_current);
     m_current = nullptr;
     emit queueChanged();
 }
