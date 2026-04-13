@@ -8,6 +8,7 @@
  *  Tel.: +49 2203 601 2907
  */
 
+#include <QDateTime>
 #include <QDir>
 #include <QElapsedTimer>
 #include <QEventLoop>
@@ -44,6 +45,8 @@ struct GtCoreProcessExecutor::Impl
 
     /// Pointer to current runnable
     QPointer<GtRunnable> currentRunnable;
+
+    QList<QPointer<GtProcessExecutionInfo>> processRunInfo;
 };
 
 GtCoreProcessExecutor::GtCoreProcessExecutor(QObject* parent, Flags flags) :
@@ -83,6 +86,26 @@ GtCoreProcessExecutor::runTask(GtTask* task)
 
     return executeNextTask();
 }
+
+GtProcessExecutionInfo* GtCoreProcessExecutor::runTask2(GtTask *task)
+{
+    gtDebugId(GT_EXEC_ID).medium() << __FUNCTION__;
+
+    auto processRunInfo = queueTask2(task);
+
+    if (!processRunInfo)
+    {
+        return Q_NULLPTR;
+    }
+
+    if (!taskCurrentlyRunning())
+    {
+        executeNextTask();
+    }
+
+    return processRunInfo;
+}
+
 
 bool
 GtCoreProcessExecutor::executeNextTask()
@@ -210,10 +233,56 @@ GtCoreProcessExecutor::queueTask(GtTask* task)
     task->resetMonitoringProperties();
 
     m_queue.append(task);
+    pimpl->processRunInfo.append(Q_NULLPTR);
+
     emit queueChanged();
 
     return true;
 }
+
+GtProcessExecutionInfo* GtCoreProcessExecutor::queueTask2(GtTask *task)
+{
+    if (!task)
+    {
+        gtErrorId(GT_EXEC_ID)
+        << tr("Null Task!");
+        return Q_NULLPTR;
+    }
+
+    if (task->hasDummyChildren())
+    {
+        gtErrorId(GT_EXEC_ID)
+        << tr("Tasks with objects of unknown type cannot be queued!");
+        return Q_NULLPTR;
+    }
+
+    if (taskQueued(task))
+    {
+        gtErrorId(GT_EXEC_ID)
+        << tr("Task has already been queued!");
+        return Q_NULLPTR;
+    }
+
+    gtDebugId(GT_EXEC_ID)
+        << tr("Appending Task '%1' to queue").arg(task->objectName());
+
+    // setup task for queue
+    task->setStateRecursively(GtProcessComponent::QUEUED);
+    task->resetMonitoringProperties();
+
+    m_queue.append(task);
+
+    GtProcessExecutionInfo* processExecRunInfo = new GtProcessExecutionInfo;
+    processExecRunInfo->setProcessState(GtProcessComponent::QUEUED);
+    processExecRunInfo->setQueuedTimeNow();
+    pimpl->processRunInfo.append(processExecRunInfo);
+
+    emit queueChanged();
+
+    return processExecRunInfo;
+}
+
+
 
 void
 GtCoreProcessExecutor::removeFromQueue(GtTask *task)
@@ -477,50 +546,6 @@ GtCoreProcessExecutor::setupTaskRunner()
 
 
 
-inline QString stringrepeat(const QString& input, size_t num)
-{
-    std::ostringstream os;
-    std::fill_n(std::ostream_iterator<std::string>(os), num, input.toStdString());
-    return QString::fromStdString(os.str());
-}
-
-inline void _printObjectWithChildren(GtObject* x, int lvl)
-{
-    QString intend = stringrepeat("  ", lvl);
-    qDebug() << intend << x << "->" << x->objectPath();
-    qDebug() << intend << "  c:";
-    foreach(auto c, x->findDirectChildren())
-    {
-        _printObjectWithChildren(c, lvl+1);
-    }
-
-}
-
-inline void _printLinkedObjects(QList<QPointer<GtObject>>* linkedObjects)
-{
-    for(int i=0; i<linkedObjects->size(); i++)
-    {
-        auto x = linkedObjects->at(i);
-        qDebug() << "parent:"  << x->parentObject();
-        _printObjectWithChildren(x,0);
-    }
-
-}
-
-/*
-inline void _printObj(GtObject &newObj, int lvl)
-{
-    QString intend = "";
-    for(int i=0;i<lvl;i++) intend += "  ";
-    qDebug() << "OK:" << intend + newObj.objectPath() << &newObj;
-    foreach(auto c, newObj.findDirectChildren())
-    {
-        _printObj(*c, lvl+1);
-    }
-}
-*/
-
-
 void
 GtCoreProcessExecutor::onTaskRunnerFinished()
 {
@@ -556,22 +581,6 @@ GtCoreProcessExecutor::onTaskRunnerFinished()
 
     QList<GtObjectMemento> changedData = taskRunner->dataToMerge();
 
-
-    /*gtFatal() << "changedData:";
-    int i=0;
-    foreach(auto d, changedData)
-    {
-        gtFatal() << i<<":" << d.toByteArray();
-
-        GtObjectFactory* factory = GtObjectFactory::instance();
-        auto newObj = d.toObject(*factory);
-
-        //auto newObj = d.toObject(*gtObjectFactory);
-
-        gtFatal() << i<<":" << newObj;
-        i++;
-    }*/
-
     if (pimpl->save)
     {
         gtInfoId(GT_EXEC_ID).medium()
@@ -582,50 +591,13 @@ GtCoreProcessExecutor::onTaskRunnerFinished()
         if (finishedTask->currentState() == GtProcessComponent::FINISHED ||
             finishedTask->currentState() == GtProcessComponent::WARN_FINISHED)
         {
-            /*qDebug() << finishedTask->objectPath()+" successful, checking memento";
-            foreach(auto d, changedData)
-            {
-                GtObjectFactory* factory = GtObjectFactory::instance();
-                auto newObj = d.toObject(*factory);
-
-                    qDebug() << "OK:" << d.toByteArray();
-                    //_printObj(*newObj, 0);
-                    _printObjectWithChildren(newObj.get(), 0);
-
-            }*/
-
             handleTaskFinishedHelper(changedData, finishedTask);
         }
-        else //if (finishedTask->currentState() == GtProcessComponent::FAILED)
+        else
         {
             if (finishedTask->applyMementoEvenWhenCalculatorFails())
             {
-                handleTaskFinishedHelper(changedData, finishedTask);
-                /*
-                QList<GtObjectMemento> changedData2;
-
-                qDebug() << finishedTask->objectPath()+" has not finished, checking memento";
-                foreach(auto d, changedData)
-                {
-
-                    GtObjectFactory* factory = GtObjectFactory::instance();
-                    auto newObj = d.toObject(*factory);
-
-                    if (d.className()=="gt::processstorage::data::Package")
-                    {
-                        qDebug() << "OK:" << d.toByteArray();
-                        _printObjectWithChildren(newObj.get(), 0);
-
-                        changedData2.append(d);
-                    }
-                    else
-                    {
-                        qDebug() << "IGNORE:" << d.toByteArray();
-                        _printObjectWithChildren(newObj.get(), 0);
-                    }
-                }
-
-                handleTaskFinishedHelper(changedData2, finishedTask);*/
+                handleTaskFinishedHelper(changedData, finishedTask);               
             }
         }
     }

@@ -42,6 +42,7 @@
 #include "gt_moduleinterface.h"
 #include "gt_taskgroup.h"
 #include "gt_processdata.h"
+#include "gt_processexecutioninfo.h"
 
 #include <gt_logdest.h>
 
@@ -87,6 +88,7 @@ GtCoreApplication::GtCoreApplication(QCoreApplication* parent, AppMode batch) :
     // register data classes of core lib here
     gtObjectFactory->registerClass(GT_METADATA(GtProcessData));
     gtObjectFactory->registerClass(GT_METADATA(GtTaskGroup));
+    gtObjectFactory->registerClass(GT_METADATA(GtProcessExecutionInfo));
 }
 
 GtCoreApplication::~GtCoreApplication()
@@ -290,37 +292,33 @@ GtCoreApplication::initSession(const QString& id)
     }
 }
 
-void GtCoreApplication::initProject(const QString &id)
+void
+GtCoreApplication::initProject(const QString &id)
 {
     qDebug() << "GtCoreApplication::initProject";
     qDebug() << "curr proj:" << gtApp->currentProject();
-    qDebug() << "User Defined project:" << id;
+    qDebug() << "User Defined project:" << id;    
     qDebug() << "Known projects";
     foreach(auto _p, m_session->projects())
     {
         qDebug() << "- "<<_p->objectName();
     }
-    GtProject* projObj = m_session->findProject(id);
-    qDebug() << "Found project:" << projObj;
-    if(projObj)
+
+
+    if(gtApp->currentProject())
     {
-
-        qDebug() << "setting project...";
-       // m_session->setCurrentProject(projObj);
-        gtDataModel->openProject(projObj);
-        //m_session->loadProjectData(projObj);
-        qDebug() << "...done setting project";
-       // qDebug() << "is Open:" << projObj->isOpen();
-         //GtCoreDatamodel::openProject(projObj);
-       // gtApp->settings()->setLastProject(id);
-      //  qDebug() << "is Open:" << projObj->isOpen();
-
+        qDebug() << "closing current project...";
+        gtDataModel->GtCoreDatamodel::closeProject(gtApp->currentProject());
     }
 
-    //switchCurrentProject();
-    qDebug() << "curr proj:" << gtApp->currentProject();
-    qDebug() << "This thread:" << QThread::currentThread() ;
-    qDebug() << "This thread id:" << QThread::currentThreadId() ;
+    GtProject* projObj = m_session->findProject(id);
+    qDebug() << "Found project:" << projObj;
+
+    if(projObj)
+    {
+        qDebug() << "open project...";
+        gtDataModel->GtCoreDatamodel::openProject(projObj);
+    }
 }
 
 void

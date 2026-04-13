@@ -235,8 +235,11 @@ public:
      */
     void initSession(const QString& id = QString());
 
+    /**
+     * @brief initProject
+     * @param id
+     */
     void initProject(const QString &id = QString());
-
 
     /**
      * @brief switchSession

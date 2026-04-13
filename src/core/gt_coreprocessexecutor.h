@@ -17,6 +17,7 @@
 #include <QObject>
 #include <QPointer>
 
+#include "gt_processexecutioninfo.h"
 #include "gt_processexecutormanager.h"
 #define gtProcessExecutor (gt::deprecated::processExecutor())
 
@@ -74,6 +75,8 @@ public:
      */
     bool runTask(GtTask* task);
 
+    GtProcessExecutionInfo* runTask2(GtTask* task);
+
     /**
      * @brief Executes the next task in the queue. No task must be running.
      * @return Whether task execution was successfully triggered
@@ -125,6 +128,8 @@ public:
      * @return Success
      */
     bool queueTask(GtTask* task);
+
+    GtProcessExecutionInfo* queueTask2(GtTask* task);
 
     /**
      * @brief Removes the task from the queue

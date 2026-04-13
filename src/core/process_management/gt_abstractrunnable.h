@@ -37,12 +37,6 @@ public:
      */
     GtAbstractRunnable();
 
-    void debug1a();
-    void debug2a();
-    void debug3a();
-    void debug4a();
-    void debug5a();
-
     /**
      * @brief Destructor.
      */
