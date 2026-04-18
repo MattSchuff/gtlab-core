@@ -394,6 +394,8 @@ GtTask::runChildElements()
         mementoCurrent[_obj->uuid()] = _obj->toMemento();
     }
 
+    bool aborted=false;
+
     // run calculators
     foreach (GtProcessComponent* comp, childs)
     {       
@@ -443,7 +445,9 @@ GtTask::runChildElements()
 
             // in case the flag applyMementoEvenWhenCalculatorFails is active,
             // should the part at "evaluating..." and below also be carried out?
-            return false;
+            //return false;
+            aborted = true;
+            break;
         }
 
         // moved to behind calc warning check. Before, a termination request superseded the runFailsOnWarning check
@@ -451,16 +455,20 @@ GtTask::runChildElements()
         {
             gtWarning() << "task terminated!";
             setState(GtProcessComponent::TERMINATED);
-            return false;
+            //return false;
+            aborted = true;
+            break;
         }
 
         mementoCurrent = mementoNew;
     }
 
-
-    qDebug() << "evaluating...";
-    // evaluate current iteration step
-    m_lastEval = evaluate();
+    if(!aborted)
+    {
+        qDebug() << "evaluating...";
+        // evaluate current iteration step
+        m_lastEval = evaluate();
+    }
 
     // trigger transfer of monitoring properties after evaluation
     emit transferMonitoringProperties();
@@ -475,7 +483,8 @@ GtTask::runChildElements()
         emit monitoringDataTransfer(m_currentIter, monData);
     }
 
-    return true;
+    return !aborted;
+    //return true;
 }
 
 GtMonitoringDataSet
