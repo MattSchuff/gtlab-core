@@ -1441,22 +1441,40 @@ handleObjectAdd(GtObject& parent,
         return false;
     }
 
-    int numberOfChildren = parent.findDirectChildren().size();
 
-    if (ind >= numberOfChildren)
+    // check if UUID exists
+    auto existingObj = parent.getDirectChildByUuid(newObj->uuid());
+    if(!existingObj)
     {
-        parent.appendChild(newObj.release());
-    }
-    else if (ind >= 0)
-    {
-        parent.insertChild(ind, newObj.release());
+        int numberOfChildren = parent.findDirectChildren().size();
+
+        if (ind >= numberOfChildren)
+        {
+            parent.appendChild(newObj.release());
+        }
+        else if (ind >= 0)
+        {
+            parent.insertChild(ind, newObj.release());
+        }
+        else
+        {
+            gtDebug() << "INDEX:" << ind;
+            gtDebug() << "INDEX NOT IN RANGE -> CANNOT ADD OBJECT!";
+            return false;
+        }
+
     }
     else
     {
-        gtDebug() << "INDEX:" << ind;
-        gtDebug() << "INDEX NOT IN RANGE -> CANNOT ADD OBJECT!";
-        return false;
+        gtDebug() << "Object with UUID exists, applying diff...";
+        GtObjectMementoDiff diff{existingObj->toMemento(), memento};
+        if(!parent.applyDiff(diff))
+        {
+            gtError() << "Error applying diff";
+            return false;
+        }
     }
+
 
     return true;
 }
