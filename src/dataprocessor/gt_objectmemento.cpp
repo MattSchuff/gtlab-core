@@ -36,6 +36,15 @@ GtObjectMemento::GtObjectMemento(const GtObject* obj, bool clone)
     }
 }
 
+GtObjectMemento::GtObjectMemento(const GtObject *obj, bool clone, QMap<QString, QString> *uuidMappingOldToNew)
+{
+    if (obj)
+    {
+        GtObjectIO oio;
+        *this = oio.toMemento(obj, clone, uuidMappingOldToNew);
+    }
+}
+
 
 GtObjectMemento::GtObjectMemento(const QDomElement& element)
 {

@@ -47,6 +47,8 @@ public:
         @param clone Wether identiy information should be cloned or not
         @return GtObjectMemento memento */
     GtObjectMemento toMemento(const GtObject* o, bool clone = true);
+    GtObjectMemento toMemento(const GtObject* o, bool clone, QMap<QString, QString>* uuidMappingOldToNew);
+
 
     /** Creates QDomElement from given GtObjectMemento.
         @param m GtObjectMemento

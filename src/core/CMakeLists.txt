@@ -74,6 +74,7 @@ set(headers
     process_management/calculators/gt_exporttomementocalculator.h
     process_management/helper/gt_processexecutioninfo.h
     process_management/helper/gt_taskchildren_datachangerevert.h
+    process_management/helper/gt_deepcopytask.h
     settings/gt_shortcutsettingsdata.h
     states/gt_state.h
     states/gt_stategroup.h
@@ -181,7 +182,8 @@ set(sources
     process_management/process_runner/gt_processrunnertcpconnection.cpp
     process_management/calculators/gt_exporttomementocalculator.cpp
     process_management/helper/gt_processexecutioninfo.cpp
-    process_management/helper/gt_taskchildren_datachangerevert.cpp
+    process_management/helper/gt_taskchildren_datachangerevert.cpp    
+    process_management/helper/gt_deepcopytask.cpp
     settings/gt_shortcutsettingsdata.cpp
     states/gt_state.cpp
     states/gt_stategroup.cpp
@@ -218,8 +220,7 @@ set(resources
     ${CMAKE_CURRENT_SOURCE_DIR}/../resources/templates/templates.qrc
 )
 
-add_library(GTlabCore ${headers} ${hdr_private} ${sources} ${resources}
-    process_management/helper/objectdebugprint.h)
+add_library(GTlabCore ${headers} ${hdr_private} ${sources} ${resources})
 add_library(GTlab::Core ALIAS GTlabCore)
 
 target_compile_definitions(GTlabCore PRIVATE GT_MODULE_ID="Core" GT_EXEC_ID="Exec")

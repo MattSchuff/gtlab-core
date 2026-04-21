@@ -145,7 +145,14 @@ GtObject::hasDummyParents() const
 GtObjectMemento
 GtObject::toMemento(bool clone) const
 {
-    return GtObjectMemento(this, clone);
+    //return GtObjectMemento(this, clone);
+    return toMemento(clone, nullptr);
+}
+
+GtObjectMemento
+GtObject::toMemento(bool clone, QMap<QString, QString>* uuidMappingOldToNew) const
+{
+    return GtObjectMemento(this, clone, uuidMappingOldToNew);
 }
 
 void
@@ -177,15 +184,15 @@ GtObject::revertDiff(GtObjectMementoDiff& diff)
 namespace {
 GtObject* copyCloneHelper(const GtObject* toCopy,
                           GtAbstractObjectFactory* fac,
-                          bool clone)
+                          bool clone, QMap<QString, QString>* uuidMappingOldToNew)
 {
     // check for factory
     if (!fac)
     {
         gtWarning().verbose()
-                << QObject::tr("No factory set for %1 object '%2'! (Using default)")
-                   .arg(clone ? QStringLiteral("copying") : QStringLiteral("cloning"),
-                        toCopy->objectName());
+        << QObject::tr("No factory set for %1 object '%2'! (Using default)")
+                .arg(clone ? QStringLiteral("copying") : QStringLiteral("cloning"),
+                     toCopy->objectName());
 
         assert(gtObjectFactory);
 
@@ -193,7 +200,7 @@ GtObject* copyCloneHelper(const GtObject* toCopy,
     }
 
     // generate memento
-    GtObjectMemento memento = toCopy->toMemento(clone);
+    GtObjectMemento memento = toCopy->toMemento(clone, uuidMappingOldToNew);
 
     if (memento.isNull())
     {
@@ -207,13 +214,20 @@ GtObject* copyCloneHelper(const GtObject* toCopy,
 GtObject*
 GtObject::copy() const
 {
-    return copyCloneHelper(this, pimpl->factory, false);
+    return copy(nullptr);
+    //return copyCloneHelper(this, pimpl->factory, false, nullptr);
+}
+
+GtObject*
+GtObject::copy(QMap<QString, QString> *uuidMappingOldToNew) const
+{
+    return copyCloneHelper(this, pimpl->factory, false, uuidMappingOldToNew);
 }
 
 GtObject*
 GtObject::clone() const
 {
-    return copyCloneHelper(this, pimpl->factory, true);
+    return copyCloneHelper(this, pimpl->factory, true, nullptr);
 }
 
 bool

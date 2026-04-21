@@ -38,6 +38,7 @@ public:
      * @param clone
      */
     explicit GtObjectMemento(const GtObject* obj = nullptr, bool clone = true);
+    explicit GtObjectMemento(const GtObject* obj, bool clone, QMap<QString, QString>* uuidMappingOldToNew);
 
     /**
      * @brief GtObjectMemento

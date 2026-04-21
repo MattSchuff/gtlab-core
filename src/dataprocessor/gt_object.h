@@ -162,6 +162,7 @@ public:
      * @return
      */
     GtObjectMemento toMemento(bool clone = true) const;
+    GtObjectMemento toMemento(bool clone, QMap<QString, QString>* uuidMappingOldToNew) const;
 
     /**
      * @brief fromMemento
@@ -190,6 +191,7 @@ public:
      * @return a copy of the object.
      */
     GtObject* copy() const;
+    GtObject* copy(QMap<QString, QString>* uuidMappingOldToNew) const;
 
     /**
      * @brief clone

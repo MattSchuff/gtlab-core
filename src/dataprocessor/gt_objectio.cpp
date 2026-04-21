@@ -222,6 +222,12 @@ GtObjectIO::setFactory(GtAbstractObjectFactory* factory)
 GtObjectMemento
 GtObjectIO::toMemento(const GtObject* o, bool clone)
 {
+    return toMemento(o, clone, nullptr);
+}
+
+GtObjectMemento
+GtObjectIO::toMemento(const GtObject *o, bool clone, QMap<QString, QString> *uuidMappingOldToNew)
+{
     // global object element
     GtObjectMemento memento;
 
@@ -246,6 +252,11 @@ GtObjectIO::toMemento(const GtObject* o, bool clone)
         uuid = QUuid::createUuid().toString();
     }
 
+    if(uuidMappingOldToNew!=nullptr)
+    {
+        (*uuidMappingOldToNew)[o->uuid()] = uuid;
+    }
+
     memento.setUuid(uuid);
 
     // object name
@@ -258,10 +269,11 @@ GtObjectIO::toMemento(const GtObject* o, bool clone)
     for (const GtObject* child : directChildren)
     {
         // recursion through GtObjectMemento constructor
-        memento.childObjects.push_back(GtObjectMemento(child, clone));
+        memento.childObjects.push_back(GtObjectMemento(child, clone, uuidMappingOldToNew));
     }
 
     return memento;
+
 }
 
 QDomElement

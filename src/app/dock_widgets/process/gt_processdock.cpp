@@ -20,6 +20,7 @@
 #include <QSignalMapper>
 
 #include "gt_algorithms.h"
+#include "gt_deepcopytask.h"
 #include "gt_mainwin.h"
 #include "gt_processview.h"
 #include "gt_datamodel.h"
@@ -1459,46 +1460,72 @@ GtProcessDock::restoreExpandStatesHelper(const QStringList& expandedUuids,
     }
 }
 
-void
-GtProcessDock::copyElement(const QModelIndex& index)
+namespace {
+
+GtObject* processComponentIndexToObjectHelper(GtProcessDock* processdock, const QModelIndex& index, bool *ok)
 {
+    *ok = true;
+
     if (!index.isValid())
     {
-        return;
+        *ok = false;
+        return nullptr;
     }
 
-    QModelIndex srcIndex = mapToSource(index);
+    QModelIndex srcIndex = processdock->mapToSource(index);
 
     if (!srcIndex.isValid())
     {
-        return;
+        *ok = false;
+        return nullptr;
     }
 
     if (srcIndex.model() != gtDataModel)
     {
-        return;
+        *ok = false;
+        return nullptr;
     }
 
     GtObject* obj = gtDataModel->objectFromIndex(srcIndex);
 
     if (!obj)
     {
-        return;
+        *ok = false;
+        return nullptr;
     }
 
+    return obj;
+}
+
+
+GtObject* processComponentCloneCopyHelper(GtObject* obj, bool *ok)
+{
     auto pComp = qobject_cast<GtProcessComponent*>(obj);
 
     if (!pComp)
     {
-        return;
+        *ok = false;
+        return nullptr;
     }
 
     if (!pComp->isReady())
     {
-        return;
+        *ok = false;
+        return nullptr;
     }
 
-    GtObject* copy = obj->copy();
+    QMap<QString, QString> mapping;
+
+    GtObject* copy = obj->copy(&mapping);
+
+
+    qDebug().noquote() << "Mapping:";
+
+    foreach(auto m, mapping.keys())
+    {
+        qDebug().noquote() << m <<"->" << mapping[m];
+    }
+
 
     auto origTask = qobject_cast<GtTask*>(pComp);
     auto newTask = qobject_cast<GtTask*>(copy);
@@ -1507,7 +1534,8 @@ GtProcessDock::copyElement(const QModelIndex& index)
     {
         if (qobject_cast<GtTaskGroup*>(origTask->parent()))
         {
-            mapPropertyConnections(origTask, newTask);
+            //mapPropertyConnections(origTask, newTask);
+            gt::updatePropertyConnectionsViaMapping(newTask, &mapping);
         }
         else
         {
@@ -1515,7 +1543,8 @@ GtProcessDock::copyElement(const QModelIndex& index)
 
             if (!origTaskClone)
             {
-                return;
+                *ok = false;
+                return nullptr;
             }
 
             QList<GtPropertyConnection*> validPropCons =
@@ -1534,15 +1563,37 @@ GtProcessDock::copyElement(const QModelIndex& index)
             }
 
             detail::setOffLostConnectionWarnings(
-                        detail::lostPropertyConnections(origTask),
-                        detail::highestParentTask(origTask));
+                detail::lostPropertyConnections(origTask),
+                detail::highestParentTask(origTask));
 
-            mapPropertyConnections(origTaskClone, newTask);
+            //mapPropertyConnections(origTaskClone, newTask);
+            gt::updatePropertyConnectionsViaMapping(newTask, &mapping);
 
             delete origTaskClone;
         }
 
         detail::updateRelativeObjectLinks(origTask, newTask);
+    }
+
+    return copy;
+}
+
+}
+
+void
+GtProcessDock::copyElement(const QModelIndex& index)
+{
+    bool ok;
+    GtObject* obj = processComponentIndexToObjectHelper(this, index, &ok);
+    if(!ok || !obj)
+    {
+        return;
+    }
+
+    GtObject* copy = processComponentCloneCopyHelper(obj, &ok);
+    if(!ok || !copy)
+    {
+        return;
     }
 
     QMimeData* mimeData = gtDataModel->mimeDataFromObject(copy, false);
@@ -1565,101 +1616,23 @@ GtProcessDock::renameElement()
 void
 GtProcessDock::cloneElement(const QModelIndex& index)
 {
-    if (!index.isValid())
-    {
-        return;
-    }
-
-    QModelIndex srcIndex = mapToSource(index);
-
-    if (!srcIndex.isValid())
-    {
-        return;
-    }
-
-    if (srcIndex.model() != gtDataModel)
-    {
-        return;
-    }
-
-    GtObject* obj = gtDataModel->objectFromIndex(srcIndex);
-
-    if (!obj)
-    {
-        return;
-    }
-
-    auto pComp = qobject_cast<GtProcessComponent*>(obj);
-
-    if (!pComp)
-    {
-        return;
-    }
-
-    if (!pComp->isReady())
+    bool ok;
+    GtObject* obj = processComponentIndexToObjectHelper(this, index, &ok);
+    if(!ok || !obj)
     {
         return;
     }
 
     GtObject* parent = obj->parentObject();
-
     if (!parent)
     {
         return;
     }
 
-    GtObject* cloned = obj->copy();
-
-    // check cloned object
-    if (!cloned)
+    GtObject* cloned = processComponentCloneCopyHelper(obj, &ok);
+    if(!ok || !cloned)
     {
         return;
-    }
-
-    auto origTask = qobject_cast<GtTask*>(obj);
-    auto newTask = qobject_cast<GtTask*>(cloned);
-
-    if (newTask && origTask)
-    {
-        if (qobject_cast<GtTaskGroup*>(origTask->parent()))
-        {
-            mapPropertyConnections(origTask, newTask);
-        }
-        else
-        {
-            GtTask* origTaskClone =
-                qobject_cast<GtTask*>(origTask->clone());
-
-            if (!origTaskClone)
-            {
-                return;
-            }
-
-            QList<GtPropertyConnection*> validPropCons =
-                detail::internalPropertyConnections(origTask);
-
-            foreach (GtPropertyConnection* propCon, validPropCons)
-            {
-                GtObject* conClone = propCon->clone();
-                GtObject* conCopy = propCon->copy();
-
-                if (conClone && conCopy)
-                {
-                    origTaskClone->appendChild(conClone);
-                    newTask->appendChild(conCopy);
-                }
-            }
-
-            detail::setOffLostConnectionWarnings(
-                        detail::lostPropertyConnections(origTask),
-                        detail::highestParentTask(origTask));
-
-            mapPropertyConnections(origTaskClone, newTask);
-
-            delete origTaskClone;
-        }
-
-        detail::updateRelativeObjectLinks(origTask, newTask);
     }
 
     // paste new element
