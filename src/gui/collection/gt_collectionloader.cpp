@@ -11,6 +11,7 @@
 
 #include "gt_collectionloader.h"
 
+#include "gt_environment.h"
 #include "gt_logging.h"
 #include "gt_collectionnetworkitem.h"
 #include "gt_mdilauncher.h"
@@ -160,16 +161,32 @@ GtCollectionLoader::collectionPath()
         return QString();
     }
 
-    QDir dir(qApp->applicationDirPath());
 
-    if (!dir.cdUp())
+    QString collectionpathstr{""};
+
+    if (gtEnvironment->environmentVariableExists("COLLECTIONS_PATH"))
     {
-        gtError() << tr("Could not reach collection path!");
-        return QString();
+        collectionpathstr = gtEnvironment->value("COLLECTIONS_PATH").toString();
     }
 
-    dir.setPath(dir.absolutePath() + QDir::separator() +
-                QStringLiteral("Collections"));
+    if(collectionpathstr.isEmpty())
+    {
+        QDir dirtemp = qApp->applicationDirPath();
+
+        if (!dirtemp.cdUp())
+        {
+            gtError() << tr("Could not reach collection path!");
+            return QString();
+        }
+
+        dirtemp.setPath(dirtemp.absolutePath() + QDir::separator() +
+                    QStringLiteral("Collections"));
+
+        collectionpathstr = dirtemp.absolutePath();
+    }
+
+    QDir dir{collectionpathstr};
+
 
     if (!dir.exists())
     {

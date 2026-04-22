@@ -169,6 +169,11 @@ GtCoreApplication::init()
     gtEnvironment->setRoamingDir(roamingPath());
     gtEnvironment->loadEnvironment();
 
+    if(!gtEnvironment->environmentVariableExists("COLLECTIONS_PATH"))
+    {
+        gtEnvironment->addEnvironmentVariable("COLLECTIONS_PATH");
+    }
+
     // forward project changed signals
     connect(this, &GtCoreApplication::currentProjectChanged,
             gtExternalizationManager, [](GtProject* project){
