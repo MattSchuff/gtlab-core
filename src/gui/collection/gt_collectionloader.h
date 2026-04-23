@@ -57,10 +57,6 @@ public:
      */
     void downloadCollectionItems(const QList<GtCollectionNetworkItem>& items);
 
-private:
-    /// Collection pointer.
-    GtCollectionInterface* m_collection;
-
     /**
      * @brief Returns collection path based on given collection. If path
      * does not exists, a new directory will be created. If path could not
@@ -68,6 +64,11 @@ private:
      * @return Collection path.
      */
     QString collectionPath();
+
+private:
+    /// Collection pointer.
+    GtCollectionInterface* m_collection;
+
 
     /**
      * @brief loadLocalCollectionItem

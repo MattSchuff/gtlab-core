@@ -18,6 +18,7 @@
 #include <QCheckBox>
 #include <QPushButton>
 #include <QMovie>
+#include <qobject.h>
 
 #include "gt_application.h"
 #include "gt_abstractcollectionsettings.h"
@@ -46,7 +47,8 @@ GtCollectionEditor::GtCollectionEditor() :
     m_updateAllButton(nullptr),
     m_selectAllCheckBox(nullptr),
     m_loader(nullptr),
-    m_fetchMovie(nullptr)
+    m_fetchMovie(nullptr),
+    m_updateLocalButton(nullptr)
 {
     setObjectName(tr("Collection"));
 
@@ -95,6 +97,11 @@ GtCollectionEditor::generateCollectionSpecificWidgets()
     }
 
     QVBoxLayout* colLay = new QVBoxLayout;
+
+
+    m_updateLocalButton = new QPushButton(gt::gui::icon::sync(), tr("Update local collection"));
+    m_updateLocalButton->setVisible(true);
+    colLay->addWidget(m_updateLocalButton);
 
     m_specificCollectionWidget = m_collectionSettings->localCollectionWidget(
                                      m_collectionWidget);
@@ -170,6 +177,8 @@ GtCollectionEditor::generateCollectionSpecificWidgets()
     connect(m_selectAllCheckBox, SIGNAL(toggled(bool)),
             SLOT(onSelectAllCheckToggled(bool)));
     connect(m_updateAllButton, SIGNAL(clicked(bool)), SLOT(updateAllItems()));
+
+    connect(m_updateLocalButton, SIGNAL(clicked(bool)), SLOT(updateLocalCollection()));
 }
 
 void
@@ -538,4 +547,9 @@ GtCollectionEditor::updateAllItems()
     loadLocalCollection();
 
     m_tabWidget->setCurrentIndex(0);
+}
+
+void GtCollectionEditor::updateLocalCollection()
+{
+    loadLocalCollection();
 }
