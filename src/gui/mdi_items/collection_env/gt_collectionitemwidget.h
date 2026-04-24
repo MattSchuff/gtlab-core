@@ -17,10 +17,12 @@
 class QFrame;
 class GtCollectionItem;
 
+#include "gt_gui_exports.h"
+
 /**
  * @brief The GtCollectionItemWidget class
  */
-class GtCollectionItemWidget : public QDialog
+class GT_GUI_EXPORT GtCollectionItemWidget : public QDialog
 {
     Q_OBJECT
 
