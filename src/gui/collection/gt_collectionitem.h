@@ -17,6 +17,7 @@
 #include <QMap>
 #include <QStringList>
 #include <QVariant>
+#include <QIcon>
 
 class GtCollectionLoader;
 
@@ -88,6 +89,9 @@ public:
     */
    QString localPath() const;
 
+   QIcon icon() const;
+   void setIcon(const QIcon &val);
+
 private:
    /// Identification string.
     QString m_ident;
@@ -109,6 +113,8 @@ private:
 
     /// Property map
     QMap<QString, QVariant> m_properties;
+
+    QIcon m_icon;
 
 };
 

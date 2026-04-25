@@ -10,10 +10,11 @@
  */
 
 #include "gt_collectionitem.h"
+#include "gt_icons.h"
 
 GtCollectionItem::GtCollectionItem() : m_version(0.)
 {
-
+    m_icon = gt::gui::icon::property();
 }
 
 QString
@@ -58,6 +59,16 @@ QString
 GtCollectionItem::localPath() const
 {
     return m_localPath;
+}
+
+QIcon GtCollectionItem::icon() const
+{
+    return m_icon;
+}
+
+void GtCollectionItem::setIcon(const QIcon &val)
+{
+    m_icon = val;
 }
 
 QString
