@@ -14,6 +14,7 @@
 #include "gt_mdiitem.h"
 
 class GtXmlHighlighter;
+class GtMementoEditor;
 
 /**
  * @brief The GtMementoViewer class
@@ -43,6 +44,8 @@ public:
      */
     bool allowsMultipleInstances() const override;
 
+    virtual void sendText(const QString& value) override;
+
 public slots:
     void onThemeChanged() override;
 
@@ -50,6 +53,7 @@ private:
     /// Xml highlighter
     GtXmlHighlighter* m_highlighter;
 
+    GtMementoEditor* m_editor;
 };
 
 #endif // GTMEMENTOVIEWER_H

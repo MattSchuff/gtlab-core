@@ -51,6 +51,11 @@ GtMdiItem::setData(GtObject* /*obj*/)
 
 }
 
+void GtMdiItem::sendText(const QString & /*value*/)
+{
+
+}
+
 GtMdiItem::~GtMdiItem()
 {
     // if this object is a child of frame, the QPointer of frame was not set to

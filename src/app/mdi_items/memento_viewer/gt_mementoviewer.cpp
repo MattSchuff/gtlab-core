@@ -10,27 +10,29 @@
 
 #include <QIcon>
 #include <QVBoxLayout>
+#include <QDropEvent>
 
 #include "gt_mementoviewer.h"
 #include "gt_icons.h"
 #include "gt_mementoeditor.h"
 #include "gt_xmlhighlighter.h"
 
-GtMementoViewer::GtMementoViewer()
+GtMementoViewer::GtMementoViewer():
+    m_editor(nullptr)
 {
     setObjectName("Memento Viewer");
 
-    GtMementoEditor* editor = new GtMementoEditor(widget());
-    editor->setReadOnly(true);
+    m_editor = new GtMementoEditor(widget());
+    m_editor->setReadOnly(true);
 
-    m_highlighter = new GtXmlHighlighter(editor->document());
+    m_highlighter = new GtXmlHighlighter(m_editor->document());
 
     QVBoxLayout* lay = new QVBoxLayout;
     lay->setContentsMargins(0, 0, 0, 0);
     lay->setSpacing(0);
     widget()->setLayout(lay);
 
-    lay->addWidget(editor);
+    lay->addWidget(m_editor);
 }
 
 GtMementoViewer::~GtMementoViewer() = default;
@@ -45,6 +47,12 @@ bool
 GtMementoViewer::allowsMultipleInstances() const
 {
     return true;
+}
+
+void GtMementoViewer::sendText(const QString &value)
+{
+    if(!m_editor) return;
+    m_editor->setPlainText(value);
 }
 
 void

@@ -55,6 +55,8 @@ public:
      */
     virtual void setData(GtObject* obj);
 
+    virtual void sendText(const QString& value);
+
     /** Event called after current project has changed.
         @param new current project */
     virtual void projectChangedEvent(GtProject* project);

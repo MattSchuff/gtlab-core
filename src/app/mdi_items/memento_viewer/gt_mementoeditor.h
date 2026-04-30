@@ -14,6 +14,8 @@
 
 #include "gt_codeeditor.h"
 
+class GtObject;
+
 /**
  * @brief The GtMementoEditor class
  */
