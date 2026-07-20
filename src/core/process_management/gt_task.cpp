@@ -16,6 +16,8 @@
 #include "gt_objectlinkproperty.h"
 #include "gt_objectpathproperty.h"
 #include "gt_processrunnerglobals.h"
+#include "gt_objectmemento.h"
+#include "gt_objectmementodiff.h"
 
 #include <QDebug>
 #include <QThreadPool>
@@ -374,42 +376,78 @@ GtTask::runChildElements()
 
     qDebug() << "running calculators...";
 
+
+    auto linkedObjs = this->runnable()->linkedObjects();
+
+    // Store the current state of source objects in mementos
+    QMap<QString,GtObjectMemento> mementoCurrent;
+    QMap<QString,GtObjectMemento> mementoNew;
+    foreach(auto _obj, linkedObjs)
+    {
+        mementoCurrent[_obj->uuid()] = _obj->toMemento();
+    }
+
+
+    bool aborted=false;
+
     // run calculators
     foreach (GtProcessComponent* comp, childs)
     {
-        if (!comp->exec())
+        bool success = comp->exec();
+
+        QMap<QString,GtObjectMemento> mementoNew;
+        mementoNew.clear();
+        foreach(auto _obj, linkedObjs)
+        {
+            mementoNew[_obj->uuid()] = _obj->toMemento();
+        }
+
+        if (!success)
         {
             // calculator run failed
             setState(GtProcessComponent::FAILED);
 
             qDebug() << "   |-> run failed!";
+        }
+        else
+        {
+            GtCalculator* calc = qobject_cast<GtCalculator*>(comp);
 
-            return false;
+            if (calc && calc->runFailsOnWarning())
+            {
+                if (calc->currentState() == GtProcessComponent::WARN_FINISHED)
+                {
+                    calc->setState(FAILED);
+                    setState(GtProcessComponent::FAILED);
+                }
+            }
         }
 
+        if(currentState() == GtProcessComponent::FAILED)
+        {
+            aborted = true;
+            break;
+        }
+
+        // moved to behind calc warning check. Before, a termination request superseded the runFailsOnWarning check
         if (isInterruptionRequested())
         {
             gtWarning() << "task terminated!";
             setState(GtProcessComponent::TERMINATED);
-            return false;
+            //return false;
+            aborted = true;
+            break;
         }
 
-        GtCalculator* calc = qobject_cast<GtCalculator*>(comp);
-
-        if (calc && calc->runFailsOnWarning())
-        {
-            if (calc->currentState() == GtProcessComponent::WARN_FINISHED)
-            {
-                calc->setState(FAILED);
-                setState(GtProcessComponent::FAILED);
-                return false;
-            }
-        }
+        mementoCurrent = mementoNew;
     }
 
-    qDebug() << "evaluating...";
-    // evaluate current iteration step
-    m_lastEval = evaluate();
+    if(!aborted)
+    {
+        qDebug() << "evaluating...";
+        // evaluate current iteration step
+        m_lastEval = evaluate();
+    }
 
     // trigger transfer of monitoring properties after evaluation
     emit transferMonitoringProperties();
@@ -424,7 +462,7 @@ GtTask::runChildElements()
         emit monitoringDataTransfer(m_currentIter, monData);
     }
 
-    return true;
+    return !aborted;
 }
 
 GtMonitoringDataSet

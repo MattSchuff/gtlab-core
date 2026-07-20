@@ -17,6 +17,7 @@
 #include <QObject>
 #include <QPointer>
 
+#include "gt_processexecutioninfo.h"
 #include "gt_processexecutormanager.h"
 #define gtProcessExecutor (gt::deprecated::processExecutor())
 
@@ -158,6 +159,13 @@ public:
     * @return success
     */
     bool setCustomProjectPath(QString projectPath);
+
+
+    /**
+     * @brief Retrieve the GtProcessExectionInfo object for a task
+     * returns nullptr if no task is found or active
+     */
+    GtProcessExecutionInfo* taskProcessExecutionInfo(GtTask* task);
 
 signals:
 

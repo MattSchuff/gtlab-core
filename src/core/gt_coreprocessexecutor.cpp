@@ -42,6 +42,9 @@ struct GtCoreProcessExecutor::Impl
 
     /// Pointer to current runnable
     QPointer<GtRunnable> currentRunnable;
+
+    /// store proc run info per task
+    QHash<GtTask*, GtProcessExecutionInfo*> processExecInfo;
 };
 
 GtCoreProcessExecutor::GtCoreProcessExecutor(QObject* parent, Flags flags) :
@@ -208,6 +211,15 @@ GtCoreProcessExecutor::queueTask(GtTask* task)
     task->resetMonitoringProperties();
 
     m_queue.append(task);
+
+
+    GtProcessExecutionInfo* procExcInfo = new GtProcessExecutionInfo;
+    procExcInfo->setProcessState(GtProcessComponent::QUEUED);
+    procExcInfo->setQueuedTimeNow();
+    pimpl->processExecInfo[task] = procExcInfo;
+
+
+
     emit queueChanged();
 
     return true;
@@ -277,6 +289,18 @@ GtCoreProcessExecutor::setCustomProjectPath(QString projectPath)
     return true;
 }
 
+GtProcessExecutionInfo *GtCoreProcessExecutor::taskProcessExecutionInfo(GtTask *task)
+{
+    if (pimpl->processExecInfo.contains(task))
+    {
+        return pimpl->processExecInfo[task];
+    }
+    else
+    {
+        return Q_NULLPTR;
+    }
+}
+
 bool
 GtCoreProcessExecutor::terminateCurrentTask()
 {
@@ -299,6 +323,11 @@ GtCoreProcessExecutor::execute()
         QEventLoop eventLoop;
 
         connect(runner, &QObject::destroyed, &eventLoop, &QEventLoop::quit);
+
+        if(pimpl->processExecInfo.contains(m_current))
+        {
+            pimpl->processExecInfo[m_current]->setStartTimeNow();
+        }
 
         // run
         runner->run();
@@ -379,6 +408,28 @@ GtCoreProcessExecutor::handleTaskFinishedHelper(
             gtWarningId(GT_EXEC_ID) << tr("Failed to apply memento diff!");
             ok = false;
         }
+
+
+        qDebug() << "Diff after task is:";
+        qDebug().noquote() << QString::fromUtf8(sumDiff.toByteArray());
+        qDebug() << "---end sumDiff";
+
+
+        qDebug().noquote() << "Task run info:" << task << pimpl->processExecInfo.contains(task);
+        if(pimpl->processExecInfo.contains(task)) qDebug().noquote() << "info:" << pimpl->processExecInfo[task];
+
+        if(pimpl->processExecInfo.contains(task))
+        {
+            auto _x = pimpl->processExecInfo[task];
+            _x->setProcessState(task->currentState());
+            _x->setDataDiffToMerge(sumDiff);
+            _x->setEndTimeNow();
+        }
+        else
+        {
+            gtWarningId(GT_EXEC_ID) << tr("No process run info object available for task");
+        }
+
     }
 
     if (!ok)

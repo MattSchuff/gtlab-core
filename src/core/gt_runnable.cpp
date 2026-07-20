@@ -75,13 +75,17 @@ GtRunnable::run()
         qDebug() << "--- calculator execution finished ---";
         qDebug() << "";
 
-        writeObjects();
+        //writeObjects();
     }
     else
     {
         qDebug() << "--- calculator execution failed ---";
         qDebug() << "";
     }
+
+    // we write the output in both cases, if applied or not is determined in
+    // wrap-up of executed task (ProcessExecutor resp. TaskRunner)
+    writeObjects();
 
     m_successfulRun = success;
 
